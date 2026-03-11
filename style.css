@@ -1,19 +1,19 @@
 body {
   margin: 0;
   overflow: hidden;
-  background: black;
   font-family: Arial, sans-serif;
 }
 
-video, canvas {
+#intro-screen {
   position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
 }
 
 #brandVideo {
+  position: absolute;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   z-index: -1;
 }
@@ -35,4 +35,9 @@ button {
 
 .hidden {
   display: none;
+}
+
+#ar-container {
+  width: 100%;
+  height: 100vh;
 }

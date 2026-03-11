@@ -1,3 +1,6 @@
+window.onerror = function(message, source, lineno) {
+  alert("Erro: " + message + " Linha: " + lineno);
+};
 import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 import { ARButton } from 'https://unpkg.com/three@0.160.0/examples/jsm/webxr/ARButton.js';
 import { GLTFLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
@@ -19,13 +22,14 @@ const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 enterBtn.addEventListener("click", initAR);
 
 function initAR(){
-
-  enterBtn.style.display="none";
+  alert("Botão clicado");
 
   if (!navigator.xr) {
-    alert("WebXR não suportado neste dispositivo.");
-    return;
+    alert("WebXR não disponível");
+  } else {
+    alert("WebXR detectado");
   }
+}
 
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.01, 20);
@@ -155,4 +159,5 @@ function render(timestamp,frame){
   if(mixer) mixer.update(clock.getDelta());
   renderer.render(scene,camera);
 }
+
 

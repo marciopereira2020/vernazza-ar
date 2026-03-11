@@ -2,62 +2,97 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>St. Patrick AR Experience 🍀</title>
+<title>St. Patrick AR - Premium 🍀</title>
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
-<script src="https://www.gstatic.com/draco/versioned/decoders/1.5.6/draco_decoder.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script>
 <script src="https://cdn.webrtc-experiment.com/RecordRTC.js"></script>
 <style>
-     #ui-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; text-align: center; }
-     #record-btn { width: 80px; height: 80px; border-radius: 50%; border: 5px solid white; background: red; cursor: pointer; }
-     #status { color: white; font-family: sans-serif; margin-top: 10px; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 5px; }
-     .hidden { display: none; }
+     body { margin: 0; overflow: hidden; }
+     #ui-container {
+       position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+       z-index: 1000; text-align: center; width: 100%;
+     }
+     #record-btn {
+       width: 70px; height: 70px; border-radius: 50%;
+       border: 4px solid white; background: #e74c3c;
+       box-shadow: 0 0 15px rgba(0,0,0,0.5); cursor: pointer;
+     }
+     #record-btn:active { transform: scale(0.9); }
+     #status {
+       color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+       margin-top: 15px; background: rgba(0,0,0,0.7);
+       padding: 8px 15px; border-radius: 20px; font-size: 14px;
+       display: inline-block;
+     }
 </style>
 </head>
 <body>
 <div id="ui-container">
 <button id="record-btn"></button>
-<div id="status">Toque para gravar 3s de dança!</div>
+<br>
+<div id="status">Aponte para o QR Code e grave sua dança! 🍀</div>
 </div>
-<a-scene mindar-image="imageTargetSrc: ./targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+<a-scene
+     mindar-image="imageTargetSrc: ./targets.mind; filterMinCF: 0.0001; filterBeta: 0.005; missTolerance: 10;"
+     color-space="sRGB"
+     renderer="colorManagement: true, physicallyCorrectLights: true, antialias: true, exposure: 1.2"
+     vr-mode-ui="enabled: false"
+     device-orientation-permission-ui="enabled: false">
 <a-assets>
 <a-asset-item id="stPatrickModel" src="st_patrick_dance.glb"></a-asset-item>
 </a-assets>
 <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 <a-entity mindar-image-target="targetIndex: 0">
-<a-gltf-model src="#stPatrickModel"
-                     position="0 -1 -2"
-                     scale="1 1 1"
-                     rotation="0 0 0"
-                     animation-mixer>
+<a-gltf-model
+         id="st-patrick"
+         src="#stPatrickModel"
+         position="0 -1.5 0.5"
+         scale="3 3 3"
+         rotation="0 0 0"
+         animation-mixer
+         shadow="cast: true">
 </a-gltf-model>
-<a-light type="directional" intensity="1.5" position="1 2 1"></a-light>
-<a-light type="ambient" intensity="0.5"></a-light>
+<a-light type="ambient" color="#FFF" intensity="1.5"></a-light>
+<a-light type="directional" color="#FFF" intensity="2.0" position="-1 4 2"></a-light>
+<a-light type="point" intensity="0.8" position="0 -1 1"></a-light>
 </a-entity>
 </a-scene>
 <script>
      const btn = document.getElementById('record-btn');
      const status = document.getElementById('status');
      let recorder;
+     // Garantir que o modelo brilhe ao carregar
+     document.querySelector('#st-patrick').addEventListener('model-loaded', (e) => {
+       const mesh = e.detail.model;
+       mesh.traverse((node) => {
+         if (node.isMesh) {
+           node.material.emissiveIntensity = 0.2; // Brilho suave próprio
+           node.material.needsUpdate = true;
+         }
+       });
+       console.log("Modelo carregado e iluminado!");
+     });
      btn.addEventListener('click', async () => {
-       // Iniciar captura da tela do Canvas
        const canvas = document.querySelector('canvas');
-       const stream = canvas.captureStream(30); // 30 FPS
-       recorder = new RecordRTC(stream, { type: 'video', mimeType: 'video/webm' });
-       status.innerText = "GRAVANDO... (3s)";
-       btn.style.background = "gray";
+       const stream = canvas.captureStream(30);
+       recorder = new RecordRTC(stream, {
+         type: 'video',
+         mimeType: 'video/webm;codecs=vp9',
+         bitsPerSecond: 12800000 // Alta qualidade
+       });
+       status.innerText = "GRAVANDO... 🎥";
+       btn.style.background = "#2ecc71"; // Muda para verde gravando
        recorder.startRecording();
-       // Para após 3 segundos
        setTimeout(() => {
          recorder.stopRecording(() => {
            let blob = recorder.getBlob();
-           status.innerText = "VÍDEO PRONTO! Baixando...";
-           btn.style.background = "red";
-           // Simulação de download (Em um app real, aqui você enviaria para o FFmpeg.wasm)
+           status.innerText = "VÍDEO GERADO! Baixando...";
+           btn.style.background = "#e74c3c";
            const url = URL.createObjectURL(blob);
            const a = document.createElement('a');
            a.href = url;
-           a.download = 'st_patrick_dance.webm';
+           a.download = 'meu-st-patrick.webm';
            a.click();
          });
        }, 3000);

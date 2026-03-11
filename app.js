@@ -2,15 +2,15 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 let scene, camera, renderer, mixer;
-let arScene, arCamera, arRenderer;
+let arScene, arCamera, arRenderer, arMixer;
 let arModel;
 let clock = new THREE.Clock();
-
-initIntro();
 
 /* ========================= */
 /* INTRO 3D */
 /* ========================= */
+
+initIntro();
 
 function initIntro() {
 
@@ -39,6 +39,7 @@ function initIntro() {
   loader.load("./stpatrick.glb", (gltf) => {
 
     const model = gltf.scene;
+    model.scale.set(1,1,1);
     scene.add(model);
 
     mixer = new THREE.AnimationMixer(model);
@@ -58,7 +59,7 @@ function animateIntro() {
 }
 
 /* ========================= */
-/* BOTÃO → ATIVA AR */
+/* ATIVAR AR */
 /* ========================= */
 
 document.getElementById("startAR").addEventListener("click", async () => {
@@ -111,53 +112,38 @@ function initAR() {
 
   const loader = new GLTFLoader();
 
-loader.load("./stpatrick.glb", (gltf) => {
+  loader.load("./stpatrick.glb", (gltf) => {
 
-  arModel = gltf.scene;
+    arModel = gltf.scene;
+    arModel.scale.set(1,1,1);
+    arModel.visible = false;
+    arScene.add(arModel);
 
-  arModel.scale.set(1, 1, 1);
-  arModel.position.set(0, 0, -2);
-  arModel.visible = true;
-
-  arScene.add(arModel);
-
-});
+    arMixer = new THREE.AnimationMixer(arModel);
+    gltf.animations.forEach((clip) => {
+      arMixer.clipAction(clip).play();
+    });
 
   });
 
-  // Plano invisível para detectar toque
-  const plane = new THREE.Mesh(
-    new THREE.PlaneGeometry(10, 10),
-    new THREE.MeshBasicMaterial({ visible: false })
-  );
+  // Clique posiciona modelo 2m à frente da câmera
+  window.addEventListener("click", () => {
 
-  plane.rotation.x = -Math.PI / 2;
-  arScene.add(plane);
+    if (!arModel) return;
 
-  const raycaster = new THREE.Raycaster();
-  const pointer = new THREE.Vector2();
+    const direction = new THREE.Vector3();
+    arCamera.getWorldDirection(direction);
 
-  window.addEventListener("click", (event) => {
+    const position = arCamera.position.clone().add(direction.multiplyScalar(2));
 
-    pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-    pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-    raycaster.setFromCamera(pointer, arCamera);
-
-    const intersects = raycaster.intersectObject(plane);
-
-    if (intersects.length > 0 && arModel) {
-
-      arModel.position.copy(intersects[0].point);
-      arModel.visible = true;
-
-    }
+    arModel.position.copy(position);
+    arModel.visible = true;
 
   });
 
   function renderAR() {
     requestAnimationFrame(renderAR);
-    if (mixer) mixer.update(clock.getDelta());
+    if (arMixer) arMixer.update(clock.getDelta());
     arRenderer.render(arScene, arCamera);
   }
 
@@ -170,7 +156,7 @@ loader.load("./stpatrick.glb", (gltf) => {
 
 document.getElementById("captureBtn").addEventListener("click", () => {
 
-  const canvas = document.getElementById("ar-canvas");
+  const canvas3D = document.getElementById("ar-canvas");
   const video = document.getElementById("camera");
 
   const tempCanvas = document.createElement("canvas");
@@ -180,7 +166,7 @@ document.getElementById("captureBtn").addEventListener("click", () => {
   const ctx = tempCanvas.getContext("2d");
 
   ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
-  ctx.drawImage(canvas, 0, 0, tempCanvas.width, tempCanvas.height);
+  ctx.drawImage(canvas3D, 0, 0, tempCanvas.width, tempCanvas.height);
 
   const image = tempCanvas.toDataURL("image/png");
 
@@ -189,4 +175,3 @@ document.getElementById("captureBtn").addEventListener("click", () => {
   link.download = "stpatrick-photo.png";
   link.click();
 });
-

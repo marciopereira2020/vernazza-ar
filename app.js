@@ -111,16 +111,17 @@ function initAR() {
 
   const loader = new GLTFLoader();
 
-  loader.load("./stpatrick.glb", (gltf) => {
+loader.load("./stpatrick.glb", (gltf) => {
 
-    arModel = gltf.scene;
-    arModel.visible = false;
-    arScene.add(arModel);
+  arModel = gltf.scene;
 
-    mixer = new THREE.AnimationMixer(arModel);
-    gltf.animations.forEach((clip) => {
-      mixer.clipAction(clip).play();
-    });
+  arModel.scale.set(1, 1, 1);
+  arModel.position.set(0, 0, -2);
+  arModel.visible = true;
+
+  arScene.add(arModel);
+
+});
 
   });
 
@@ -188,3 +189,4 @@ document.getElementById("captureBtn").addEventListener("click", () => {
   link.download = "stpatrick-photo.png";
   link.click();
 });
+

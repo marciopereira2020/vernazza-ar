@@ -1,30 +1,35 @@
-import * as THREE from 'https://esm.sh/three@0.160.0';
-import { ARButton } from 'https://esm.sh/three@0.160.0/examples/jsm/webxr/ARButton.js';
-import { GLTFLoader } from 'https://esm.sh/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>St Patrick AR 🍀</title>
+<link rel="stylesheet" href="style.css">
 
-console.log("Three carregado:", THREE);
+<script type="module" src="main.js"></script>
+<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
-let camera, scene, renderer;
-let model;
+<style>
+model-viewer {
+  width: 100%;
+  height: 100vh;
+  display: none;
+}
+</style>
 
-document.getElementById("enterAR").addEventListener("click", () => {
+</head>
+<body>
 
-  if (!navigator.xr) {
-    alert("WebXR não suportado.");
-    return;
-  }
+<button id="enterAR">🍀 Entrar na Experiência</button>
 
-  scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.01, 20);
+<model-viewer
+  id="iosAR"
+  src="modelo.glb"
+  ios-src="modelo.usdz"
+  ar
+  ar-modes="quick-look"
+  camera-controls>
+</model-viewer>
 
-  renderer = new THREE.WebGLRenderer({alpha:true});
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.xr.enabled = true;
-
-  document.body.appendChild(renderer.domElement);
-  document.body.appendChild(
-    ARButton.createButton(renderer, { requiredFeatures: ["hit-test"] })
-  );
-
-});
-
+</body>
+</html>

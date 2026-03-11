@@ -1,6 +1,3 @@
-import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-import { GLTFLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-
 
 let scene, camera, renderer, mixer;
 let clock = new THREE.Clock();
@@ -140,4 +137,5 @@ document.getElementById("captureBtn").addEventListener("click", () => {
   link.download = "stpatrick-photo.png";
   link.click();
 });
+
 

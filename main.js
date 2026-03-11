@@ -1,3 +1,6 @@
+window.onerror = function(message, source, lineno, colno, error) {
+  alert("Erro: " + message + " Linha: " + lineno);
+};
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js';
 import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.160/examples/jsm/webxr/ARButton.js';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160/examples/jsm/loaders/GLTFLoader.js';
@@ -212,4 +215,5 @@ function downloadFile(url,name){
   link.href=url;
   link.download=name;
   link.click();
+
 }

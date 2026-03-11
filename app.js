@@ -18,9 +18,9 @@ startButton.addEventListener("click", async () => {
 
   const mindarThree = new MindARThree({
     container: arContainer,
-    uiLoading: "no",
+    uiLoading: "yes",
     uiScanning: "no",
-    uiError: "no"
+    uiError: "yes"
   });
 
   renderer = mindarThree.renderer;
@@ -37,7 +37,8 @@ startButton.addEventListener("click", async () => {
     model = gltf.scene;
 
     model.scale.set(1.2, 1.2, 1.2);
-    model.position.set(0, 0, -2); // 2 metros à frente
+    model.position.set(0, 0, -2);
+
     scene.add(model);
 
     mixer = new THREE.AnimationMixer(model);
@@ -56,10 +57,7 @@ startButton.addEventListener("click", async () => {
 
 });
 
-/* FOTO */
-
 captureBtn.addEventListener("click", () => {
-
   const dataURL = renderer.domElement.toDataURL("image/png");
 
   const link = document.createElement("a");

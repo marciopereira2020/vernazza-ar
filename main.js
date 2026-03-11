@@ -1,9 +1,6 @@
-window.onerror = function(message, source, lineno, colno, error) {
-  alert("Erro: " + message + " Linha: " + lineno);
-};
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js';
-import { ARButton } from 'https://cdn.jsdelivr.net/npm/three@0.160/examples/jsm/webxr/ARButton.js';
-import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160/examples/jsm/loaders/GLTFLoader.js';
+import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+import { ARButton } from 'https://unpkg.com/three@0.160.0/examples/jsm/webxr/ARButton.js';
+import { GLTFLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
 
 let camera, scene, renderer;
 let model, mixer;
@@ -25,6 +22,11 @@ function initAR(){
 
   enterBtn.style.display="none";
 
+  if (!navigator.xr) {
+    alert("WebXR não suportado neste dispositivo.");
+    return;
+  }
+
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.01, 20);
 
@@ -40,14 +42,12 @@ function initAR(){
 
   const loader = new GLTFLoader();
   loader.load('modelo.glb',gltf=>{
-
     model=gltf.scene;
 
     if(gltf.animations.length>0){
       mixer=new THREE.AnimationMixer(model);
       gltf.animations.forEach(clip=>mixer.clipAction(clip).play());
     }
-
   });
 
   renderer.setAnimationLoop(render);
@@ -97,7 +97,6 @@ function render(timestamp,frame){
 
     session.requestReferenceSpace('viewer').then(viewer=>{
       session.requestHitTestSource({space:viewer}).then(source=>{
-
         const hits=frame.getHitTestResults(source);
 
         if(hits.length>0){
@@ -114,7 +113,7 @@ function render(timestamp,frame){
           const direction=new THREE.Vector3(0,0,-1);
           direction.applyQuaternion(camera.quaternion);
 
-          const finalPos=groundPos.clone().add(direction.multiplyScalar(2.2));
+          const finalPos=groundPos.clone().add(direction.multiplyScalar(2.4));
           finalPos.y=groundPos.y;
 
           model.position.copy(finalPos);
@@ -139,7 +138,7 @@ function render(timestamp,frame){
 
       if(portal.scale.x>=1){
         portal.userData.growing=false;
-        logo.material.opacity=1;
+        if(logo) logo.material.opacity=1;
 
         setTimeout(()=>{
           scene.remove(portal);
@@ -157,63 +156,3 @@ function render(timestamp,frame){
   renderer.render(scene,camera);
 }
 
-function startCountdown(callback){
-  let count=3;
-  countdownEl.innerText=count;
-  const interval=setInterval(()=>{
-    count--;
-    if(count>0){
-      countdownEl.innerText=count;
-    }else{
-      clearInterval(interval);
-      countdownEl.innerText="";
-      callback();
-    }
-  },1000);
-}
-
-photoBtn.addEventListener("click",()=>{
-  startCountdown(()=>{
-    renderer.render(scene,camera);
-    const dataURL=renderer.domElement.toDataURL("image/png");
-    downloadFile(dataURL,"stpatrick-photo.png");
-  });
-});
-
-videoBtn.addEventListener("click",()=>{
-
-  if(isIOS){
-    alert("Vídeo não suportado totalmente no iPhone. Use modo Foto.");
-    return;
-  }
-
-  startCountdown(()=>{
-    const stream=renderer.domElement.captureStream(30);
-    const recorder=new MediaRecorder(stream,{mimeType:'video/webm'});
-    let chunks=[];
-
-    recorder.ondataavailable=e=>{
-      if(e.data.size>0) chunks.push(e.data);
-    };
-
-    recorder.onstop=()=>{
-      const blob=new Blob(chunks,{type:'video/webm'});
-      const url=URL.createObjectURL(blob);
-      downloadFile(url,"stpatrick-video.webm");
-    };
-
-    recorder.start();
-
-    setTimeout(()=>{
-      recorder.stop();
-    },6000);
-  });
-});
-
-function downloadFile(url,name){
-  const link=document.createElement("a");
-  link.href=url;
-  link.download=name;
-  link.click();
-
-}

@@ -94,7 +94,7 @@ function initAR() {
     60,
     window.innerWidth / window.innerHeight,
     0.1,
-    100
+    1000
   );
 
   arCamera.position.set(0, 1.6, 0);
@@ -106,17 +106,45 @@ function initAR() {
   });
 
   arRenderer.setSize(window.innerWidth, window.innerHeight);
+  arRenderer.outputColorSpace = THREE.SRGBColorSpace;
+  arRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+  arRenderer.toneMappingExposure = 1;
+  arRenderer.physicallyCorrectLights = true;
 
-  const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.4);
-  arScene.add(light);
+  // Luz ambiente forte
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+  arScene.add(ambientLight);
+
+  // Luz direcional (simula sol)
+  const dirLight = new THREE.DirectionalLight(0xffffff, 2);
+  dirLight.position.set(5, 10, 5);
+  arScene.add(dirLight);
 
   const loader = new GLTFLoader();
 
   loader.load("./stpatrick.glb", (gltf) => {
 
     arModel = gltf.scene;
-    arModel.scale.set(1,1,1);
-    arModel.visible = false;
+
+    // Forçar materiais corretos
+    arModel.traverse((child) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+        if (child.material.map) {
+          child.material.map.colorSpace = THREE.SRGBColorSpace;
+        }
+      }
+    });
+
+    arModel.scale.set(1.2, 1.2, 1.2);
+
+    // Já posiciona 2m à frente da câmera
+    const direction = new THREE.Vector3();
+    arCamera.getWorldDirection(direction);
+    const position = arCamera.position.clone().add(direction.multiplyScalar(2));
+    arModel.position.copy(position);
+
     arScene.add(arModel);
 
     arMixer = new THREE.AnimationMixer(arModel);
@@ -126,20 +154,14 @@ function initAR() {
 
   });
 
-  // Clique posiciona modelo 2m à frente da câmera
-  window.addEventListener("click", () => {
+  function renderAR() {
+    requestAnimationFrame(renderAR);
+    if (arMixer) arMixer.update(clock.getDelta());
+    arRenderer.render(arScene, arCamera);
+  }
 
-    if (!arModel) return;
-
-    const direction = new THREE.Vector3();
-    arCamera.getWorldDirection(direction);
-
-    const position = arCamera.position.clone().add(direction.multiplyScalar(2));
-
-    arModel.position.copy(position);
-    arModel.visible = true;
-
-  });
+  renderAR();
+}
 
   function renderAR() {
     requestAnimationFrame(renderAR);
@@ -175,3 +197,4 @@ document.getElementById("captureBtn").addEventListener("click", () => {
   link.download = "stpatrick-photo.png";
   link.click();
 });
+

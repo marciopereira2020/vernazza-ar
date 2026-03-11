@@ -2,13 +2,12 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>St Patrick AR</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- INTRO 3D -->
   <div id="intro-screen">
     <video id="brandVideo" autoplay muted loop playsinline>
       <source src="brand_bg.mp4" type="video/mp4">
@@ -19,17 +18,17 @@
     <button id="startAR">Tirar foto com St. Patrick 🍀</button>
   </div>
 
-  <!-- AR MODE -->
   <div id="ar-screen" class="hidden">
     <video id="camera" autoplay playsinline></video>
     <canvas id="ar-canvas"></canvas>
     <button id="captureBtn">📸 Tirar Foto</button>
   </div>
 
-<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-<script src="https://unpkg.com/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
-<script src="app.js"></script>
-  
+  <!-- THREE COMPATÍVEL -->
+  <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.149.0/examples/js/loaders/GLTFLoader.js"></script>
+
+  <script src="app.js"></script>
 </body>
 </html>
 

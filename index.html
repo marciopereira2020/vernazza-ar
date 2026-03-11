@@ -1,20 +1,31 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>St Patrick AR 🍀</title>
-<link rel="stylesheet" href="style.css">
-<script type="module" src="main.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>St Patrick AR</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<button id="enterAR">🍀 Entrar na Experiência</button>
+  <!-- INTRO 3D -->
+  <div id="intro-screen">
+    <video id="brandVideo" autoplay muted loop playsinline>
+      <source src="brand_bg.mp4" type="video/mp4">
+    </video>
 
-<!-- Link nativo AR iPhone -->
-<a id="iosAR" rel="ar" href="modelo.usdz" style="display:none;">
-  <img src="" alt="">
-</a>
+    <div id="canvas-container"></div>
 
+    <button id="startAR">Tirar foto com St. Patrick 🍀</button>
+  </div>
+
+  <!-- AR MODE -->
+  <div id="ar-screen" class="hidden">
+    <video id="camera" autoplay playsinline></video>
+    <canvas id="ar-canvas"></canvas>
+    <button id="captureBtn">📸 Tirar Foto</button>
+  </div>
+
+  <script type="module" src="app.js"></script>
 </body>
 </html>

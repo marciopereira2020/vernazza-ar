@@ -1,39 +1,67 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>St Patrick AR</title>
-  <link rel="stylesheet" href="style.css" />
-
- <script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-    "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-    "mindar-three": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.4/dist/mindar-image-three.prod.js"
-  }
-}
-</script>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>St. Patrick AR Experience 🍀</title>
+<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
+<script src="https://www.gstatic.com/draco/versioned/decoders/1.5.6/draco_decoder.js"></script>
+<script src="https://cdn.webrtc-experiment.com/RecordRTC.js"></script>
+<style>
+     #ui-container { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; text-align: center; }
+     #record-btn { width: 80px; height: 80px; border-radius: 50%; border: 5px solid white; background: red; cursor: pointer; }
+     #status { color: white; font-family: sans-serif; margin-top: 10px; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 5px; }
+     .hidden { display: none; }
+</style>
 </head>
 <body>
-
-  <!-- INTRO -->
-  <div id="intro-screen">
-    <video id="brandVideo" autoplay muted loop playsinline>
-      <source src="brand_bg.mp4" type="video/mp4">
-    </video>
-    <button id="startAR">Tirar foto com St. Patrick 🍀</button>
-  </div>
-
-  <!-- AR CONTAINER -->
-  <div id="ar-container" class="hidden"></div>
-
-  <button id="captureBtn" class="hidden">📸 Tirar Foto</button>
-
-  <script type="module" src="app.js"></script>
+<div id="ui-container">
+<button id="record-btn"></button>
+<div id="status">Toque para gravar 3s de dança!</div>
+</div>
+<a-scene mindar-image="imageTargetSrc: ./targets.mind;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+<a-assets>
+<a-asset-item id="stPatrickModel" src="st_patrick_dance.glb"></a-asset-item>
+</a-assets>
+<a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+<a-entity mindar-image-target="targetIndex: 0">
+<a-gltf-model src="#stPatrickModel"
+                     position="0 -1 -2"
+                     scale="1 1 1"
+                     rotation="0 0 0"
+                     animation-mixer>
+</a-gltf-model>
+<a-light type="directional" intensity="1.5" position="1 2 1"></a-light>
+<a-light type="ambient" intensity="0.5"></a-light>
+</a-entity>
+</a-scene>
+<script>
+     const btn = document.getElementById('record-btn');
+     const status = document.getElementById('status');
+     let recorder;
+     btn.addEventListener('click', async () => {
+       // Iniciar captura da tela do Canvas
+       const canvas = document.querySelector('canvas');
+       const stream = canvas.captureStream(30); // 30 FPS
+       recorder = new RecordRTC(stream, { type: 'video', mimeType: 'video/webm' });
+       status.innerText = "GRAVANDO... (3s)";
+       btn.style.background = "gray";
+       recorder.startRecording();
+       // Para após 3 segundos
+       setTimeout(() => {
+         recorder.stopRecording(() => {
+           let blob = recorder.getBlob();
+           status.innerText = "VÍDEO PRONTO! Baixando...";
+           btn.style.background = "red";
+           // Simulação de download (Em um app real, aqui você enviaria para o FFmpeg.wasm)
+           const url = URL.createObjectURL(blob);
+           const a = document.createElement('a');
+           a.href = url;
+           a.download = 'st_patrick_dance.webm';
+           a.click();
+         });
+       }, 3000);
+     });
+</script>
 </body>
 </html>
-

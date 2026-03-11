@@ -1,45 +1,43 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { MindARThree } from 'mindar-three';
 
-let scene, camera, renderer, mixer;
-let arScene, arCamera, arRenderer, arMixer;
-let arModel;
+const startButton = document.getElementById("startAR");
+const introScreen = document.getElementById("intro-screen");
+const arContainer = document.getElementById("ar-container");
+const captureBtn = document.getElementById("captureBtn");
+
+let renderer, scene, camera, model, mixer;
 let clock = new THREE.Clock();
 
-/* ========================= */
-/* INTRO 3D */
-/* ========================= */
+startButton.addEventListener("click", async () => {
 
-initIntro();
+  introScreen.classList.add("hidden");
+  arContainer.classList.remove("hidden");
+  captureBtn.classList.remove("hidden");
 
-function initIntro() {
+  const mindarThree = new MindARThree({
+    container: arContainer,
+    uiLoading: "no",
+    uiScanning: "no",
+    uiError: "no"
+  });
 
-  const container = document.getElementById("canvas-container");
+  renderer = mindarThree.renderer;
+  scene = mindarThree.scene;
+  camera = mindarThree.camera;
 
-  scene = new THREE.Scene();
-
-  camera = new THREE.PerspectiveCamera(
-    60,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    100
-  );
-
-  camera.position.set(0, 1.5, 3);
-
-  renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  container.appendChild(renderer.domElement);
-
-  const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.5);
+  const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1.5);
   scene.add(light);
 
   const loader = new GLTFLoader();
 
   loader.load("./stpatrick.glb", (gltf) => {
 
-    const model = gltf.scene;
-    model.scale.set(1, 1, 1);
+    model = gltf.scene;
+
+    model.scale.set(1.2, 1.2, 1.2);
+    model.position.set(0, 0, -2); // 2 metros à frente
     scene.add(model);
 
     mixer = new THREE.AnimationMixer(model);
@@ -49,139 +47,23 @@ function initIntro() {
 
   });
 
-  animateIntro();
-}
+  await mindarThree.start();
 
-function animateIntro() {
-  requestAnimationFrame(animateIntro);
-  if (mixer) mixer.update(clock.getDelta());
-  renderer.render(scene, camera);
-}
-
-/* ========================= */
-/* BOTÃO ATIVAR AR */
-/* ========================= */
-
-document.getElementById("startAR").addEventListener("click", async () => {
-
-  document.getElementById("intro-screen").classList.add("hidden");
-  document.getElementById("ar-screen").classList.remove("hidden");
-
-  const video = document.getElementById("camera");
-
-  const stream = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: "environment" },
-    audio: false
+  renderer.setAnimationLoop(() => {
+    if (mixer) mixer.update(clock.getDelta());
+    renderer.render(scene, camera);
   });
 
-  video.srcObject = stream;
-  await video.play();
-
-  initAR();
 });
 
-/* ========================= */
-/* AR MODE */
-/* ========================= */
+/* FOTO */
 
-function initAR() {
+captureBtn.addEventListener("click", () => {
 
-  const canvas = document.getElementById("ar-canvas");
-
-  arScene = new THREE.Scene();
-
-  arCamera = new THREE.PerspectiveCamera(
-    60,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-  );
-
-  // Altura média humana
-  arCamera.position.set(0, 1.6, 0);
-
-  arRenderer = new THREE.WebGLRenderer({
-    canvas: canvas,
-    alpha: true,
-    antialias: true
-  });
-
-  arRenderer.setSize(window.innerWidth, window.innerHeight);
-  arRenderer.outputColorSpace = THREE.SRGBColorSpace;
-  arRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-  arRenderer.toneMappingExposure = 1;
-
-  // Luz ambiente
-  const ambientLight = new THREE.AmbientLight(0xffffff, 1.3);
-  arScene.add(ambientLight);
-
-  // Luz principal
-  const dirLight = new THREE.DirectionalLight(0xffffff, 2);
-  dirLight.position.set(5, 10, 5);
-  arScene.add(dirLight);
-
-  const loader = new GLTFLoader();
-
-  loader.load("./stpatrick.glb", (gltf) => {
-
-    arModel = gltf.scene;
-
-    // Corrigir textura
-    arModel.traverse((child) => {
-      if (child.isMesh && child.material.map) {
-        child.material.map.colorSpace = THREE.SRGBColorSpace;
-      }
-    });
-
-    // Escala realista
-    arModel.scale.set(1.2, 1.2, 1.2);
-
-    // POSIÇÃO NO "CHÃO"
-    arModel.position.set(0, 0, -2); 
-    // 0 = chão
-    // -2 = 2 metros na frente da câmera
-
-    arScene.add(arModel);
-
-    arMixer = new THREE.AnimationMixer(arModel);
-    gltf.animations.forEach((clip) => {
-      arMixer.clipAction(clip).play();
-    });
-
-  });
-
-  function renderAR() {
-    requestAnimationFrame(renderAR);
-    if (arMixer) arMixer.update(clock.getDelta());
-    arRenderer.render(arScene, arCamera);
-  }
-
-  renderAR();
-}
-
-/* ========================= */
-/* CAPTURA FOTO */
-/* ========================= */
-
-document.getElementById("captureBtn").addEventListener("click", () => {
-
-  const canvas3D = document.getElementById("ar-canvas");
-  const video = document.getElementById("camera");
-
-  const tempCanvas = document.createElement("canvas");
-  tempCanvas.width = window.innerWidth;
-  tempCanvas.height = window.innerHeight;
-
-  const ctx = tempCanvas.getContext("2d");
-
-  ctx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
-  ctx.drawImage(canvas3D, 0, 0, tempCanvas.width, tempCanvas.height);
-
-  const image = tempCanvas.toDataURL("image/png");
+  const dataURL = renderer.domElement.toDataURL("image/png");
 
   const link = document.createElement("a");
-  link.href = image;
+  link.href = dataURL;
   link.download = "stpatrick-photo.png";
   link.click();
 });
-

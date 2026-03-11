@@ -31,7 +31,7 @@ function initIntro() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   container.appendChild(renderer.domElement);
 
-  const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.4);
+  const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.5);
   scene.add(light);
 
   const loader = new GLTFLoader();
@@ -39,7 +39,7 @@ function initIntro() {
   loader.load("./stpatrick.glb", (gltf) => {
 
     const model = gltf.scene;
-    model.scale.set(1,1,1);
+    model.scale.set(1, 1, 1);
     scene.add(model);
 
     mixer = new THREE.AnimationMixer(model);
@@ -59,7 +59,7 @@ function animateIntro() {
 }
 
 /* ========================= */
-/* ATIVAR AR */
+/* BOTÃO ATIVAR AR */
 /* ========================= */
 
 document.getElementById("startAR").addEventListener("click", async () => {
@@ -75,7 +75,7 @@ document.getElementById("startAR").addEventListener("click", async () => {
   });
 
   video.srcObject = stream;
-  video.play();
+  await video.play();
 
   initAR();
 });
@@ -109,13 +109,10 @@ function initAR() {
   arRenderer.outputColorSpace = THREE.SRGBColorSpace;
   arRenderer.toneMapping = THREE.ACESFilmicToneMapping;
   arRenderer.toneMappingExposure = 1;
-  arRenderer.physicallyCorrectLights = true;
 
-  // Luz ambiente forte
   const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
   arScene.add(ambientLight);
 
-  // Luz direcional (simula sol)
   const dirLight = new THREE.DirectionalLight(0xffffff, 2);
   dirLight.position.set(5, 10, 5);
   arScene.add(dirLight);
@@ -126,20 +123,15 @@ function initAR() {
 
     arModel = gltf.scene;
 
-    // Forçar materiais corretos
     arModel.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-        if (child.material.map) {
-          child.material.map.colorSpace = THREE.SRGBColorSpace;
-        }
+      if (child.isMesh && child.material.map) {
+        child.material.map.colorSpace = THREE.SRGBColorSpace;
       }
     });
 
     arModel.scale.set(1.2, 1.2, 1.2);
 
-    // Já posiciona 2m à frente da câmera
+    // posiciona automaticamente 2m na frente
     const direction = new THREE.Vector3();
     arCamera.getWorldDirection(direction);
     const position = arCamera.position.clone().add(direction.multiplyScalar(2));
@@ -153,15 +145,6 @@ function initAR() {
     });
 
   });
-
-  function renderAR() {
-    requestAnimationFrame(renderAR);
-    if (arMixer) arMixer.update(clock.getDelta());
-    arRenderer.render(arScene, arCamera);
-  }
-
-  renderAR();
-}
 
   function renderAR() {
     requestAnimationFrame(renderAR);
@@ -197,4 +180,3 @@ document.getElementById("captureBtn").addEventListener("click", () => {
   link.download = "stpatrick-photo.png";
   link.click();
 });
-

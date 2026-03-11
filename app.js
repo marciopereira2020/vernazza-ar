@@ -97,6 +97,7 @@ function initAR() {
     1000
   );
 
+  // Altura média humana
   arCamera.position.set(0, 1.6, 0);
 
   arRenderer = new THREE.WebGLRenderer({
@@ -110,9 +111,11 @@ function initAR() {
   arRenderer.toneMapping = THREE.ACESFilmicToneMapping;
   arRenderer.toneMappingExposure = 1;
 
-  const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+  // Luz ambiente
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1.3);
   arScene.add(ambientLight);
 
+  // Luz principal
   const dirLight = new THREE.DirectionalLight(0xffffff, 2);
   dirLight.position.set(5, 10, 5);
   arScene.add(dirLight);
@@ -123,19 +126,20 @@ function initAR() {
 
     arModel = gltf.scene;
 
+    // Corrigir textura
     arModel.traverse((child) => {
       if (child.isMesh && child.material.map) {
         child.material.map.colorSpace = THREE.SRGBColorSpace;
       }
     });
 
+    // Escala realista
     arModel.scale.set(1.2, 1.2, 1.2);
 
-    // posiciona automaticamente 2m na frente
-    const direction = new THREE.Vector3();
-    arCamera.getWorldDirection(direction);
-    const position = arCamera.position.clone().add(direction.multiplyScalar(2));
-    arModel.position.copy(position);
+    // POSIÇÃO NO "CHÃO"
+    arModel.position.set(0, 0, -2); 
+    // 0 = chão
+    // -2 = 2 metros na frente da câmera
 
     arScene.add(arModel);
 
@@ -180,3 +184,4 @@ document.getElementById("captureBtn").addEventListener("click", () => {
   link.download = "stpatrick-photo.png";
   link.click();
 });
+

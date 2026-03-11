@@ -6,12 +6,12 @@
   <title>St Patrick AR</title>
   <link rel="stylesheet" href="style.css" />
 
-  <!-- IMPORT MAP (RESOLVE O ERRO DO THREE) -->
   <script type="importmap">
   {
     "imports": {
       "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-      "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+      "mindar-three": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.4/dist/mindar-image-three.prod.js"
     }
   }
   </script>
@@ -19,21 +19,18 @@
 </head>
 <body>
 
+  <!-- INTRO -->
   <div id="intro-screen">
     <video id="brandVideo" autoplay muted loop playsinline>
       <source src="brand_bg.mp4" type="video/mp4">
     </video>
-
-    <div id="canvas-container"></div>
-
     <button id="startAR">Tirar foto com St. Patrick 🍀</button>
   </div>
 
-  <div id="ar-screen" class="hidden">
-    <video id="camera" autoplay playsinline></video>
-    <canvas id="ar-canvas"></canvas>
-    <button id="captureBtn">📸 Tirar Foto</button>
-  </div>
+  <!-- AR CONTAINER -->
+  <div id="ar-container" class="hidden"></div>
+
+  <button id="captureBtn" class="hidden">📸 Tirar Foto</button>
 
   <script type="module" src="app.js"></script>
 </body>

@@ -40,18 +40,18 @@
        arjs="sourceType: webcam; debugUIEnabled: false; videoTexture: true;"
        renderer="antialias: true; colorManagement: true;"
 >
-<a-light type="ambient" intensity="1.2"></a-light>
-<a-light type="directional" position="1 4 2" intensity="0.8"></a-light>
+<a-light type="ambient" intensity="1.5"></a-light>
+<a-light type="directional" position="1 1 1" intensity="1"></a-light>
 <a-entity
            id="st-patrick-model"
-           gltf-model="url(./st_patrick.glb)"
+           gltf-model="url(./st_patrick_dance.glb)"
            scale="1 1 1"
            position="0 -1.5 0"
            look-at="[gps-camera]"
-           gps-entity-place="latitude: -23.5505; longitude: -46.6333;"
-></a-entity>
-<a-camera gps-camera rotation-reader></a-camera>
-</a-scene>
+           gps-entity-place="latitude: -22.83075798147388 ; longitude:-47.21576766108264;"></a-entity>
+       <a-camera gps-camera="simulateLatitude: -22.83075798147388 ; simulateLongitude:-22.83075798147388" rotation-reader>
+              </a-camera>
+ </a-scene>
 <script>
        // Lógica de Foto (Captura o Canvas do A-Frame + Vídeo da Câmera)
        document.getElementById('snap').addEventListener('click', () => {
@@ -76,3 +76,4 @@
 </script>
 </body>
 </html>
+

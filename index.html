@@ -3,41 +3,55 @@
 <head>
 <meta charset="utf-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<title>St. Patrick AR - Corrigido</title>
+<title>St. Patrick AR - Debug Mode</title>
 <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
 <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
 <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
 <style>
+       /* Estilo do Painel de Coordenadas */
+       #debug-panel {
+           position: absolute;
+           top: 10px;
+           left: 10px;
+           width: auto;
+           padding: 10px;
+           background: rgba(0, 0, 0, 0.75);
+           color: #00FF00; /* Verde estilo hacker/debug */
+           font-family: monospace;
+           font-size: 12px;
+           z-index: 9999;
+           border-radius: 5px;
+           border: 1px solid #00FF00;
+       }
        .buttons {
            position: absolute;
            bottom: 30px;
-           left: 0;
-           width: 100%;
-           display: flex;
-           justify-content: center;
+           left: 0; width: 100%;
+           display: flex; justify-content: center;
            z-index: 999;
        }
        .snap-button {
-           padding: 20px;
-           border-radius: 50%;
-           border: 4px solid white;
-           background: rgba(0, 0, 0, 0.6);
-           color: white;
-           font-size: 24px;
-           cursor: pointer;
-           box-shadow: 0 0 10px rgba(0,0,0,0.5);
+           padding: 15px; border-radius: 50%; border: 4px solid white;
+           background: rgba(0, 0, 0, 0.6); color: white; cursor: pointer;
        }
-       .snap-button:active { transform: scale(0.9); }
 </style>
 </head>
 <body style="margin: 0; overflow: hidden;">
+<div id="debug-panel">
+<div>Minha Lat: <span id="my-lat">Buscando...</span></div>
+<div>Minha Lon: <span id="my-lon">Buscando...</span></div>
+<hr>
+<div>Alvo Lat: -22.83075798147388</div>
+<div>Alvo Lon: -47.21576766108264</div>
+<div id="distance" style="font-weight: bold; margin-top:5px;">Distância: calculando...</div>
+</div>
 <div class="buttons">
 <button class="snap-button" id="snap">📸</button>
 </div>
 <a-scene
        vr-mode-ui="enabled: false"
        embedded
-       arjs="sourceType: webcam; debugUIEnabled: false; videoTexture: true;"
+       arjs="sourceType: webcam; debugUIEnabled: false;"
        renderer="antialias: true; colorManagement: true;"
 >
 <a-light type="ambient" intensity="1.5"></a-light>
@@ -45,35 +59,54 @@
 <a-entity
            id="st-patrick-model"
            gltf-model="url(./st_patrick_dance.glb)"
-           scale="1 1 1"
-           position="0 -1.5 0"
+           scale="2 2 2"
+           position="0 -1 0"
            look-at="[gps-camera]"
-           gps-entity-place="latitude: -22.83075798147388 ; longitude:-47.21576766108264;"></a-entity>
-       <a-camera gps-camera="simulateLatitude: -22.83075798147388 ; simulateLongitude:-22.83075798147388" rotation-reader>
-              </a-camera>
- </a-scene>
+           gps-entity-place="latitude: -23.5505; longitude: -46.6333;"
+></a-entity>
+<a-camera gps-camera rotation-reader></a-camera>
+</a-scene>
 <script>
-       // Lógica de Foto (Captura o Canvas do A-Frame + Vídeo da Câmera)
+       // Função para atualizar as coordenadas na tela
+       window.addEventListener('gps-camera-update-position', (e) => {
+           const lat = e.detail.position.latitude;
+           const lon = e.detail.position.longitude;
+           document.getElementById('my-lat').innerText = lat.toFixed(6);
+           document.getElementById('my-lon').innerText = lon.toFixed(6);
+           // Cálculo simplificado de distância (em metros aproximados)
+           const targetLat = -23.5505;
+           const targetLon = -46.6333;
+           const dist = calculateDistance(lat, lon, targetLat, targetLon);
+           document.getElementById('distance').innerText = `Distância: ${dist.toFixed(2)} metros`;
+       });
+       // Fórmula de Haversine simplificada para distância
+       function calculateDistance(lat1, lon1, lat2, lon2) {
+           const R = 6371000; // Raio da Terra em metros
+           const dLat = (lat2 - lat1) * Math.PI / 180;
+           const dLon = (lon2 - lon1) * Math.PI / 180;
+           const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+           const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+           return R * c;
+       }
+       // Lógica da Foto
        document.getElementById('snap').addEventListener('click', () => {
            const scene = document.querySelector('a-scene');
            const video = document.querySelector('video');
-           // Pega o snapshot do objeto 3D
            const canvas = scene.components.screenshot.getCanvas('perspective');
            const finalCanvas = document.createElement('canvas');
            finalCanvas.width = video.videoWidth;
            finalCanvas.height = video.videoHeight;
            const ctx = finalCanvas.getContext('2d');
-           // 1. Desenha a imagem da câmera ao fundo
            ctx.drawImage(video, 0, 0, finalCanvas.width, finalCanvas.height);
-           // 2. Desenha o objeto 3D por cima
            ctx.drawImage(canvas, 0, 0, finalCanvas.width, finalCanvas.height);
-           // Download automático
            const link = document.createElement('a');
-           link.download = 'ar-capture.png';
+           link.download = 'foto-ar.png';
            link.href = finalCanvas.toDataURL('image/png');
            link.click();
        });
 </script>
 </body>
 </html>
+
 

@@ -42,13 +42,15 @@
        vr-mode-ui="enabled: false"
        embedded
        arjs="sourceType: webcam; debugUIEnabled: false; sourceWidth:320; sourceHeight:240; displayWidth:320; displayHeight:240;"
-       renderer="precision: low; antialias: false;"
+       renderer="precision: low; antialias: false; colorManagement: true; exposure: 2"
 >
-<a-light type="ambient" intensity="1.5"></a-light>
+<a-light type="hemisphere" groundColor="#333" intensity="2"></a-light>
+<a-light type="directional" position="-1 2 1" intensity="1.5"></a-light>       
 <a-entity
            id="alvo-3d"
            gltf-model="url(./st_patrick_dance.glb)"
            scale="5 5 5"
+            position="0 -1.5 0"
            visible="false"
 ></a-entity>
 <a-camera gps-camera="gpsMinDistance: 0.5;" rotation-reader></a-camera>
@@ -103,4 +105,5 @@
 </script>
 </body>
 </html>
+
 

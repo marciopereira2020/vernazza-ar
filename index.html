@@ -3,92 +3,83 @@
 <head>
 <meta charset="utf-8" />
 <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-<title>St. Patrick AR - Debug Mode</title>
+<title>St. Patrick AR - Posicionamento Dinâmico</title>
 <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
 <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
 <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
 <style>
-       /* Estilo do Painel de Coordenadas */
        #debug-panel {
-           position: absolute;
-           top: 10px;
-           left: 10px;
-           width: auto;
-           padding: 10px;
-           background: rgba(0, 0, 0, 0.75);
-           color: #00FF00; /* Verde estilo hacker/debug */
-           font-family: monospace;
-           font-size: 12px;
-           z-index: 9999;
-           border-radius: 5px;
-           border: 1px solid #00FF00;
+           position: absolute; top: 10px; left: 10px;
+           padding: 10px; background: rgba(0, 0, 0, 0.8);
+           color: #00FF00; font-family: monospace; font-size: 11px;
+           z-index: 9999; border-radius: 8px; border: 1px solid #00FF00;
        }
-       .buttons {
-           position: absolute;
-           bottom: 30px;
-           left: 0; width: 100%;
-           display: flex; justify-content: center;
+       .ui-container {
+           position: absolute; bottom: 30px; width: 100%;
+           display: flex; flex-direction: column; align-items: center; gap: 15px;
            z-index: 999;
        }
-       .snap-button {
-           padding: 15px; border-radius: 50%; border: 4px solid white;
-           background: rgba(0, 0, 0, 0.6); color: white; cursor: pointer;
+       .btn {
+           padding: 15px 25px; border-radius: 30px; border: none;
+           background: white; color: black; font-weight: bold; cursor: pointer;
+           box-shadow: 0 4px 10px rgba(0,0,0,0.3);
        }
+       #snap { background: #ff4757; color: white; border-radius: 50%; padding: 20px; }
+       #set-pos { background: #2ed573; color: white; }
 </style>
 </head>
 <body style="margin: 0; overflow: hidden;">
 <div id="debug-panel">
-<div>Minha Lat: <span id="my-lat">Buscando...</span></div>
-<div>Minha Lon: <span id="my-lon">Buscando...</span></div>
-<hr>
-<div>Alvo Lat: -22.83075798147388</div>
-<div>Alvo Lon: -47.21576766108264</div>
-<div id="distance" style="font-weight: bold; margin-top:5px;">Distância: calculando...</div>
+<div>📍 Minha Lat: <span id="my-lat">...</span></div>
+<div>📍 Minha Lon: <span id="my-lon">...</span></div>
+<div id="distance" style="color: yellow; margin-top: 5px;">Distância: ---</div>
 </div>
-<div class="buttons">
-<button class="snap-button" id="snap">📸</button>
+<div class="ui-container">
+<button class="btn" id="set-pos">📍 FIXAR OBJETO AQUI</button>
+<button class="btn" id="snap">📸</button>
 </div>
 <a-scene
        vr-mode-ui="enabled: false"
        embedded
        arjs="sourceType: webcam; debugUIEnabled: false;"
-       renderer="antialias: true; colorManagement: true;"
+       renderer="antialias: true; colorManagement: true; exposure: 1.2;"
 >
 <a-light type="ambient" intensity="1.5"></a-light>
-<a-light type="directional" position="1 1 1" intensity="1"></a-light>
+<a-light type="directional" position="1 4 2" intensity="1"></a-light>
 <a-entity
            id="st-patrick-model"
            gltf-model="url(./st_patrick_dance.glb)"
-           scale="2 2 2"
-           position="0 -1 0"
+           scale="3 3 3"
+           position="0 -1.5 0"
            look-at="[gps-camera]"
-           gps-entity-place="latitude: -23.5505; longitude: -46.6333;"
+           visible="false"
 ></a-entity>
 <a-camera gps-camera rotation-reader></a-camera>
 </a-scene>
 <script>
-       // Função para atualizar as coordenadas na tela
+       let currentLat, currentLon;
+       const model = document.getElementById('st-patrick-model');
+       // Atualiza as coordenadas em tempo real no painel
        window.addEventListener('gps-camera-update-position', (e) => {
-           const lat = e.detail.position.latitude;
-           const lon = e.detail.position.longitude;
-           document.getElementById('my-lat').innerText = lat.toFixed(6);
-           document.getElementById('my-lon').innerText = lon.toFixed(6);
-           // Cálculo simplificado de distância (em metros aproximados)
-           const targetLat = -23.5505;
-           const targetLon = -46.6333;
-           const dist = calculateDistance(lat, lon, targetLat, targetLon);
-           document.getElementById('distance').innerText = `Distância: ${dist.toFixed(2)} metros`;
+           currentLat = e.detail.position.latitude;
+           currentLon = e.detail.position.longitude;
+           document.getElementById('my-lat').innerText = currentLat.toFixed(6);
+           document.getElementById('my-lon').innerText = currentLon.toFixed(6);
        });
-       // Fórmula de Haversine simplificada para distância
-       function calculateDistance(lat1, lon1, lat2, lon2) {
-           const R = 6371000; // Raio da Terra em metros
-           const dLat = (lat2 - lat1) * Math.PI / 180;
-           const dLon = (lon2 - lon1) * Math.PI / 180;
-           const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-           const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-           return R * c;
-       }
+       // Lógica para fixar o objeto na frente do usuário
+       document.getElementById('set-pos').addEventListener('click', () => {
+           if (!currentLat || !currentLon) {
+               alert("Aguardando sinal do GPS...");
+               return;
+           }
+           // Adiciona um pequeno offset (0.00005) para o objeto aparecer a uns 5 metros
+           const targetLat = currentLat + 0.00005;
+           const targetLon = currentLon + 0.00005;
+           model.setAttribute('gps-entity-place', `latitude: ${targetLat}; longitude: ${targetLon};`);
+           model.setAttribute('visible', 'true');
+           document.getElementById('distance').innerText = "Objeto posicionado a ~5m";
+           console.log(`Objeto fixado em: ${targetLat}, ${targetLon}`);
+       });
        // Lógica da Foto
        document.getElementById('snap').addEventListener('click', () => {
            const scene = document.querySelector('a-scene');
@@ -101,12 +92,13 @@
            ctx.drawImage(video, 0, 0, finalCanvas.width, finalCanvas.height);
            ctx.drawImage(canvas, 0, 0, finalCanvas.width, finalCanvas.height);
            const link = document.createElement('a');
-           link.download = 'foto-ar.png';
+           link.download = 'st-patrick-ar.png';
            link.href = finalCanvas.toDataURL('image/png');
            link.click();
        });
 </script>
 </body>
 </html>
+
 
 

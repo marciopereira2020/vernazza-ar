@@ -2,41 +2,30 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>Debug AR - Rastreamento Ativo</title>
+<title>St. Patrick AR - Estabilizado</title>
 <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-<script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
 <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
 <style>
        #debug-panel {
            position: absolute; top: 10px; left: 10px;
-           padding: 12px; background: rgba(0, 0, 0, 0.9);
-           color: #00FF00; font-family: 'Courier New', monospace; font-size: 11px;
-           z-index: 9999; border-radius: 5px; border: 1px solid #00FF00;
-           line-height: 1.4;
+           padding: 10px; background: rgba(0, 0, 0, 0.85);
+           color: #00FF00; font-family: monospace; font-size: 12px;
+           z-index: 1000; border-radius: 5px; pointer-events: none;
        }
        .ui-container {
            position: absolute; bottom: 30px; width: 100%;
-           display: flex; justify-content: center; z-index: 999;
+           display: flex; justify-content: center; z-index: 1000;
        }
        .btn-fix {
-           padding: 20px; border-radius: 10px; border: none;
-           background: #2ed573; color: white; font-weight: bold;
+           padding: 18px 30px; border-radius: 50px; border: 2px solid white;
+           background: #2ed573; color: white; font-weight: bold; font-size: 16px;
        }
-       .val { color: #fff; }
 </style>
 </head>
 <body style="margin: 0; overflow: hidden;">
 <div id="debug-panel">
-<b style="color: #00acee;">VOCÊ:</b><br>
-       Lat: <span id="my-lat" class="val">Buscando...</span><br>
-       Lon: <span id="my-lon" class="val">Buscando...</span><br>
-<hr>
-<b style="color: #ff4757;">OBJETO:</b><br>
-       Lat: <span id="obj-lat" class="val">Não fixado</span><br>
-       Lon: <span id="obj-lon" class="val">Não fixado</span><br>
-<hr>
-<div id="distance" style="font-size: 14px; font-weight: bold;">Distância: ---</div>
-<div id="accuracy" style="font-size: 9px; color: #aaa;">Precisão GPS: ---</div>
+<div>📍 GPS: <span id="gps-status">Aguardando...</span></div>
+<div id="distance-info">Distância: ---</div>
 </div>
 <div class="ui-container">
 <button class="btn-fix" id="set-pos">📍 FIXAR OBJETO AQUI</button>
@@ -44,56 +33,48 @@
 <a-scene
        vr-mode-ui="enabled: false"
        embedded
-       arjs="sourceType: webcam; debugUIEnabled: false; gpsMinDistance: 1;"
+       arjs="sourceType: webcam; debugUIEnabled: false; videoTexture: true;"
        renderer="antialias: true; colorManagement: true;"
 >
-<a-light type="ambient" intensity="1.5"></a-light>
+<a-light type="ambient" intensity="1.2"></a-light>
 <a-light type="directional" position="1 4 2" intensity="1"></a-light>
 <a-entity
            id="st-patrick-model"
            gltf-model="url(./st_patrick.glb)"
-           scale="3 3 3"
-           position="0 -1 0"
-           look-at="[gps-camera]"
+           scale="4 4 4"
            visible="false"
 ></a-entity>
-<a-camera gps-camera="simulateAltitude: 1.6" rotation-reader></a-camera>
+<a-camera gps-camera="gpsMinDistance: 1; alert: true;" rotation-reader></a-camera>
 </a-scene>
 <script>
-       let myLat, myLon;
-       let objLat, objLon;
        const model = document.getElementById('st-patrick-model');
-       // FORÇA O GPS A ATUALIZAR (WatchPosition)
-       if (navigator.geolocation) {
-           navigator.geolocation.watchPosition((position) => {
-               myLat = position.coords.latitude;
-               myLon = position.coords.longitude;
-               document.getElementById('my-lat').innerText = myLat.toFixed(7);
-               document.getElementById('my-lon').innerText = myLon.toFixed(7);
-               document.getElementById('accuracy').innerText = `Precisão GPS: +/- ${position.coords.accuracy.toFixed(1)}m`;
-               if (objLat && objLon) {
-                   const d = calculateDistance(myLat, myLon, objLat, objLon);
-                   document.getElementById('distance').innerText = `Distância: ${d.toFixed(2)} metros`;
-               }
-           }, (err) => {
-               console.error("Erro no GPS:", err);
-           }, {
-               enableHighAccuracy: true,
-               maximumAge: 0,
-               timeout: 27000
-           });
-       }
-       // FIXA O OBJETO
+       const gpsStatus = document.getElementById('gps-status');
+       const distInfo = document.getElementById('distance-info');
+       let userLat, userLon;
+       // Escuta o GPS através do próprio AR.js (evita travar a câmera)
+       window.addEventListener('gps-camera-update-position', (e) => {
+           userLat = e.detail.position.latitude;
+           userLon = e.detail.position.longitude;
+           gpsStatus.innerText = `${userLat.toFixed(5)}, ${userLon.toFixed(5)}`;
+           // Se o objeto já estiver fixado, atualiza a distância na tela
+           const objPos = model.getAttribute('gps-entity-place');
+           if (objPos) {
+               const d = calculateDistance(userLat, userLon, objPos.latitude, objPos.longitude);
+               distInfo.innerText = `Distância: ${d.toFixed(2)} metros`;
+           }
+       });
        document.getElementById('set-pos').addEventListener('click', () => {
-           if (!myLat) return alert("Aguardando GPS...");
-           objLat = myLat;
-           objLon = myLon;
-           document.getElementById('obj-lat').innerText = objLat.toFixed(7);
-           document.getElementById('obj-lon').innerText = objLon.toFixed(7);
-           // Plantamos o objeto na coordenada exata de onde você ESTÁ agora
-           model.setAttribute('gps-entity-place', `latitude: ${objLat}; longitude: ${objLon};`);
+           if (!userLat || !userLon) {
+               alert("GPS ainda não sincronizou. Aguarde um segundo.");
+               return;
+           }
+           // Fixa o objeto exatamente onde você está
+           model.setAttribute('gps-entity-place', {
+               latitude: userLat,
+               longitude: userLon
+           });
            model.setAttribute('visible', 'true');
-           alert("Objeto fixado! Agora se afaste 5 metros para vê-lo.");
+           alert("Objeto fixado no chão! Agora afaste-se para vê-lo.");
        });
        function calculateDistance(lat1, lon1, lat2, lon2) {
            const R = 6371000;
@@ -107,7 +88,3 @@
 </script>
 </body>
 </html>
-
-
-
-

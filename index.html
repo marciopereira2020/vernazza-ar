@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Debug AR - Low Power Mode</title>
+<title>Localizador AR</title>
 <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
 <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
 <style>
@@ -12,7 +12,6 @@
            background: rgba(0, 0, 0, 0.9); color: #00FF00;
            font-family: monospace; font-size: 10px; padding: 10px;
            z-index: 9999; border-bottom: 1px solid #00FF00;
-           pointer-events: none; box-sizing: border-box;
        }
        .ui-fixed {
            position: absolute; bottom: 20px; width: 100%;
@@ -22,49 +21,42 @@
            padding: 15px 30px; background: #2ed573; color: white;
            border: 2px solid white; border-radius: 10px; font-weight: bold;
        }
-       b { color: white; }
 </style>
 </head>
 <body style="margin: 0; overflow: hidden;">
 <div id="telemetry">
-<div><b>MINHA POSIÇÃO (LIVE):</b></div>
-       Lat: <span id="cur-lat">0.000000</span> | Lon: <span id="cur-lon">0.000000</span>
-<div style="margin-top:5px;"><b>OBJETO FIXADO EM:</b></div>
-       Lat: <span id="fix-lat">---</span> | Lon: <span id="fix-lon">---</span>
-<div style="margin-top:5px; font-size: 14px; color: yellow;">
-<b>DISTÂNCIA:</b> <span id="dist-val">0.00</span> metros
-</div>
+<b>Sua Lat:</b> <span id="cur-lat">0</span> | <b>Lon:</b> <span id="cur-lon">0</span><br>
+<b>Distância:</b> <span id="dist-val">0</span>m
 </div>
 <div class="ui-fixed">
-<button class="btn-action" id="btn-fixar">📍 FIXAR AGORA</button>
+<button class="btn-action" id="btn-fixar">📍 FIXAR E APARECER</button>
 </div>
 <a-scene
        vr-mode-ui="enabled: false"
        embedded
        arjs="sourceType: webcam; debugUIEnabled: false; sourceWidth:320; sourceHeight:240; displayWidth:320; displayHeight:240;"
-       renderer="precision: low; antialias: false; colorManagement: true; exposure: 2"
+       renderer="colorManagement: true; exposure: 2;"
 >
-<a-light type="hemisphere" groundColor="#333" intensity="2"></a-light>
-<a-light type="directional" position="-1 2 1" intensity="1.5"></a-light>       
+<a-light type="ambient" intensity="2"></a-light>
+<a-light type="directional" position="0 5 0" intensity="1.5"></a-light>
+<a-entity id="grupo-objetos" visible="false">
 <a-entity
-           id="alvo-3d"
-           gltf-model="url(./st_patrick_dance.glb)"
-           scale="5 5 5"
-            position="0 -1.5 0"
-           visible="false"
+               id="alvo-3d"
+               gltf-model="url(./st_patrick.glb)"
+               scale="10 10 10"
+               position="0 0 0"
 ></a-entity>
-<a-camera gps-camera="gpsMinDistance: 0.5;" rotation-reader></a-camera>
+<a-box color="red" scale="2 2 2" position="3 0 0"></a-box>
+</a-entity>
+<a-camera gps-camera="gpsMinDistance: 0.1;" rotation-reader></a-camera>
 </a-scene>
 <script>
-       const model = document.getElementById('alvo-3d');
+       const grupo = document.getElementById('grupo-objetos');
        const spanCurLat = document.getElementById('cur-lat');
        const spanCurLon = document.getElementById('cur-lon');
-       const spanFixLat = document.getElementById('fix-lat');
-       const spanFixLon = document.getElementById('fix-lon');
        const spanDist = document.getElementById('dist-val');
        let myLat = 0, myLon = 0;
        let fixedLat = null, fixedLon = null;
-       // Captura o GPS pelo evento do AR.js (que é o que a câmera usa)
        window.addEventListener('gps-camera-update-position', (e) => {
            myLat = e.detail.position.latitude;
            myLon = e.detail.position.longitude;
@@ -76,34 +68,27 @@
            }
        });
        document.getElementById('btn-fixar').addEventListener('click', () => {
-           if (myLat === 0) {
-               alert("Aguardando sinal GPS...");
-               return;
-           }
+           if (myLat === 0) return alert("Aguardando GPS...");
            fixedLat = myLat;
            fixedLon = myLon;
-           spanFixLat.innerText = fixedLat.toFixed(6);
-           spanFixLon.innerText = fixedLon.toFixed(6);
-           // Posiciona o modelo
-           model.setAttribute('gps-entity-place', {
+           // Fixa o grupo inteiro na coordenada
+           grupo.setAttribute('gps-entity-place', {
                latitude: fixedLat,
                longitude: fixedLon
            });
-           model.setAttribute('visible', 'true');
-           console.log("Objeto fixado!");
+           grupo.setAttribute('visible', 'true');
+           alert("Fixado! Ande 5 metros e olhe em volta.");
        });
        function haversine(lat1, lon1, lat2, lon2) {
            const R = 6371000;
            const dLat = (lat2 - lat1) * Math.PI / 180;
            const dLon = (lon2 - lon1) * Math.PI / 180;
-           const a = Math.sin(dLat/2) ** 2 +
-                     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                     Math.sin(dLon/2) ** 2;
-           const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-           return R * c;
+           const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+           return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
        }
 </script>
 </body>
 </html>
+
 
 

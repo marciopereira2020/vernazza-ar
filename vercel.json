@@ -1,5 +1,6 @@
 {
  "cleanUrls": true,
+ "trailingSlash": false,
  "headers": [
    {
      "source": "/assets/(.*)",
@@ -12,7 +13,7 @@
          "key": "Access-Control-Allow-Origin",
          "value": "*"
        }
-   ]
+     ]
    }
  ]
 }

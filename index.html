@@ -9,86 +9,98 @@
 <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.2/dist/mindar-image-aframe.prod.js"></script>
 <style>
-       body { margin: 0; overflow: hidden; font-family: sans-serif; }
-       /* Tela de Início (Gesto do Usuário) */
+       body { margin: 0; overflow: hidden; font-family: -apple-system, system-ui, sans-serif; }
+       /* Tela de Boas-vindas (Necessária para o Safari liberar Câmera e Som) */
        #start-screen {
            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-           background-color: white; z-index: 10000;
-           display: flex; flex-direction: column; align-items: center; justify-content: center;
+           background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+           z-index: 10000; display: flex; flex-direction: column;
+           align-items: center; justify-content: center; text-align: center;
        }
        #start-button {
-           padding: 15px 40px; font-size: 18px; cursor: pointer;
-           background-color: #E1306C; color: white; border: none; border-radius: 25px;
-           box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: background 0.3s;
+           padding: 18px 45px; font-size: 20px; font-weight: bold; cursor: pointer;
+           background-color: #E1306C; color: white; border: none; border-radius: 50px;
+           box-shadow: 0 10px 20px rgba(225, 48, 108, 0.3); transition: transform 0.2s;
        }
-       #start-button:active { background-color: #c2185b; }
-       /* Overlay do Instagram (Aparece quando detecta) */
+       #start-button:active { transform: scale(0.95); }
+       /* Botão do Instagram (Aparece na detecção) */
        #ui-overlay {
-           position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-           z-index: 1000; display: none; text-align: center;
+           position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+           z-index: 1000; display: none;
        }
        .btn-insta {
-           background: #E1306C; color: white; border: none; padding: 12px 24px;
-           border-radius: 30px; font-weight: bold; cursor: pointer; text-decoration: none;
-           display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+           background: #E1306C; color: white; border: none; padding: 15px 30px;
+           border-radius: 50px; font-weight: bold; text-decoration: none;
+           display: inline-block; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
        }
-       /* Indicador de Carregamento da AR */
-       .mindar-ui-loading { background-color: rgba(0,0,0,0.8); color: white; }
 </style>
 </head>
 <body>
 <div id="start-screen">
-<h1 style="color: #333; margin-bottom: 10px;">Vernazza Gelateria</h1>
-<p style="color: #666; margin-bottom: 30px;">Aponte para o painel e veja a mágica!</p>
-<button id="start-button">Abrir Câmera</button>
+<h1 style="color: #333;">Vernazza Gelateria</h1>
+<p style="color: #666; max-width: 80%; margin-bottom: 40px;">Toque no botão abaixo para ativar a Realidade Aumentada e aponte para o nosso painel!</p>
+<button id="start-button">ATIVAR MÁGICA</button>
 </div>
 <div id="ui-overlay">
-<a href="https://instagram.com/seu_perfil" target="_blank" class="btn-insta">
+<a href="https://instagram.com/vernazzagelateria" target="_blank" class="btn-insta">
            Siga-nos no Instagram! 🍦
 </a>
 </div>
 <a-scene
-       mindar-image="imageTargetSrc: ./assets/targets.mind; autoStart: false; uiLoading:yes; uiError:yes; uiScanning:yes;"
+       mindar-image="imageTargetSrc: ./assets/targets.mind; autoStart: false; uiLoading:yes;"
        embedded
        color-space="sRGB"
        renderer="colorManagement: true, physicallyCorrectLights"
        vr-mode-ui="enabled: false"
        device-orientation-permission-ui="enabled: false">
 <a-assets>
-<video id="vid" src="./assets/video-animacao.mp4" preload="auto" loop="true" crossorigin="anonymous" playsinline webkit-playsinline></video>
+<video id="vid" src="./assets/video-animacao.mp4"
+                  preload="auto" loop="true" crossorigin="anonymous"
+                  playsinline webkit-playsinline></video>
 </a-assets>
-<a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="far: 10000; objects: .clickable"></a-camera>
+<a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 <a-entity mindar-image-target="targetIndex: 0" id="target">
-<a-video src="#vid" width="1" height="1" position="0 0 0" rotation="0 0 0"></a-video>
+<a-video src="#vid" width="1" height="1" position="0 0 0"></a-video>
 </a-entity>
 </a-scene>
 <script>
+       const sceneEl = document.querySelector('a-scene');
        const startScreen = document.querySelector('#start-screen');
        const startButton = document.querySelector('#start-button');
-       const sceneEl = document.querySelector('a-scene');
        const target = document.querySelector('#target');
        const video = document.querySelector('#vid');
        const overlay = document.querySelector('#ui-overlay');
-       // 1. Gesto do Usuário: Inicia a AR e o Vídeo (mudo)
-       startButton.addEventListener('click', () => {
-           console.log("Iniciando AR...");
-           startScreen.style.display = 'none';
-           // Tenta dar play mudo para o Safari aceitar o autoplay depois
+       // Função de Inicialização Segura
+       const initAR = () => {
+           console.log("Iniciando componentes...");
+           // 1. Tenta dar um play mudo para "acordar" o motor de vídeo do iOS
            video.play().then(() => {
-               video.pause(); // Pausa imediatamente, só para o Safari "conhecer" o elemento
-               video.muted = false; // Tira o mudo para quando for detectado
-           }).catch(e => console.error("Erro ao pré-carregar vídeo:", e));
-           // Inicia o motor de AR
-           sceneEl.systems['mindar-image-system'].start();
+               video.pause();
+               video.muted = false; // Queremos áudio se o vídeo tiver
+           }).catch(e => console.log("Aguardando interação para vídeo"));
+           // 2. Tenta iniciar o sistema de AR
+           const startSystem = () => {
+               const arSystem = sceneEl.systems['mindar-image-system'];
+               if (arSystem) {
+                   arSystem.start();
+                   startScreen.style.display = 'none';
+                   console.log("AR Iniciada com sucesso!");
+               } else {
+                   console.log("Sistema MindAR ainda não carregado, tentando novamente...");
+                   setTimeout(startSystem, 200); // Tenta de novo em 200ms
+               }
+           };
+           startSystem();
+       };
+       // Clique no botão principal
+       startButton.addEventListener('click', initAR);
+       // Eventos de detecção do Painel
+       target.addEventListener("targetFound", () => {
+           console.log("Painel Vernazza Detectado!");
+           video.play().catch(e => console.error("Erro ao tocar vídeo:", e));
+           overlay.style.display = "block";
        });
-       // 2. Eventos de Detecção
-       target.addEventListener("targetFound", event => {
-           console.log("Painel detectado!");
-           video.play(); // Inicia animação
-           overlay.style.display = "block"; // Mostra botão do Instagram
-       });
-       target.addEventListener("targetLost", event => {
-           console.log("Painel perdido.");
+       target.addEventListener("targetLost", () => {
            video.pause();
            overlay.style.display = "none";
        });

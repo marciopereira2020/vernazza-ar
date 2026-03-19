@@ -1,91 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Localizador AR</title>
-<script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-<script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.2/dist/mindar-image-aframe.prod.js"></script>
 <style>
-       #telemetry {
-           position: absolute; top: 0; left: 0; width: 100%;
-           background: rgba(0, 0, 0, 0.9); color: #00FF00;
-           font-family: monospace; font-size: 10px; padding: 10px;
-           z-index: 9999; border-bottom: 1px solid #00FF00;
-       }
-       .ui-fixed {
-           position: absolute; bottom: 20px; width: 100%;
-           display: flex; justify-content: center; z-index: 1000;
-       }
-       .btn-action {
-           padding: 15px 30px; background: #2ed573; color: white;
-           border: 2px solid white; border-radius: 10px; font-weight: bold;
-       }
+     body { margin: 0; overflow: hidden; }
+     #ui-overlay {
+       position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+       z-index: 1000; display: none;
+     }
+     .btn-insta {
+       background: #E1306C; color: white; border: none; padding: 10px 20px;
+       border-radius: 20px; font-family: sans-serif; cursor: pointer;
+     }
 </style>
 </head>
-<body style="margin: 0; overflow: hidden;">
-<div id="telemetry">
-<b>Sua Lat:</b> <span id="cur-lat">0</span> | <b>Lon:</b> <span id="cur-lon">0</span><br>
-<b>Distância:</b> <span id="dist-val">0</span>m
-</div>
-<div class="ui-fixed">
-<button class="btn-action" id="btn-fixar">📍 FIXAR E APARECER</button>
+<body>
+<div id="ui-overlay">
+<button class="btn-insta" onclick="window.location.href='https://instagram.com/seu_perfil'">
+       Siga no Instagram!
+</button>
 </div>
 <a-scene
-       vr-mode-ui="enabled: false"
-       embedded
-       arjs="sourceType: webcam; debugUIEnabled: false; sourceWidth:320; sourceHeight:240; displayWidth:320; displayHeight:240;"
-       renderer="colorManagement: true; exposure: 2;"
->
-<a-light type="ambient" intensity="2"></a-light>
-<a-light type="directional" position="0 5 0" intensity="1.5"></a-light>
-<a-entity id="grupo-objetos" visible="false">
-<a-entity
-               id="alvo-3d"
-               gltf-model="url(./st_patrick_dance.glb)"
-               scale="10 10 10"
-               position="0 0 0"
-></a-entity>
-<a-box color="red" scale="2 2 2" position="3 0 0"></a-box>
+     mindar-image="imageTargetSrc: ./assets/targets.mind;"
+     color-space="sRGB"
+     renderer="colorManagement: true, physicallyCorrectLights"
+     vr-mode-ui="enabled: false"
+     device-orientation-permission-ui="enabled: false">
+<a-assets>
+<video id="vid" src="./assets/video-animacao.mp4" loop="true" crossorigin="anonymous"></video>
+</a-assets>
+<a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+<a-entity mindar-image-target="targetIndex: 0" id="target">
+<a-video src="#vid" width="1" height="1" position="0 0 0" rotation="0 0 0"></a-video>
 </a-entity>
-<a-camera gps-camera="gpsMinDistance: 0.1;" rotation-reader></a-camera>
 </a-scene>
 <script>
-       const grupo = document.getElementById('grupo-objetos');
-       const spanCurLat = document.getElementById('cur-lat');
-       const spanCurLon = document.getElementById('cur-lon');
-       const spanDist = document.getElementById('dist-val');
-       let myLat = 0, myLon = 0;
-       let fixedLat = null, fixedLon = null;
-       window.addEventListener('gps-camera-update-position', (e) => {
-           myLat = e.detail.position.latitude;
-           myLon = e.detail.position.longitude;
-           spanCurLat.innerText = myLat.toFixed(6);
-           spanCurLon.innerText = myLon.toFixed(6);
-           if (fixedLat !== null) {
-               const d = haversine(myLat, myLon, fixedLat, fixedLon);
-               spanDist.innerText = d.toFixed(2);
-           }
-       });
-       document.getElementById('btn-fixar').addEventListener('click', () => {
-           if (myLat === 0) return alert("Aguardando GPS...");
-           fixedLat = myLat;
-           fixedLon = myLon;
-           // Fixa o grupo inteiro na coordenada
-           grupo.setAttribute('gps-entity-place', {
-               latitude: fixedLat,
-               longitude: fixedLon
-           });
-           grupo.setAttribute('visible', 'true');
-           alert("Fixado! Ande 5 metros e olhe em volta.");
-       });
-       function haversine(lat1, lon1, lat2, lon2) {
-           const R = 6371000;
-           const dLat = (lat2 - lat1) * Math.PI / 180;
-           const dLon = (lon2 - lon1) * Math.PI / 180;
-           const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
-           return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-       }
+     const target = document.querySelector('#target');
+     const video = document.querySelector('#vid');
+     const overlay = document.querySelector('#ui-overlay');
+     // Detecta quando o iPhone "achou" o painel
+     target.addEventListener("targetFound", event => {
+       video.play(); // Inicia animação
+       overlay.style.display = "block"; // Mostra botão do Instagram
+     });
+     target.addEventListener("targetLost", event => {
+       video.pause();
+       overlay.style.display = "none";
+     });
 </script>
 </body>
 </html>

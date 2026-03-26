@@ -3,184 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vernazza - Gestão de Eventos 2026</title>
+    <title>Vernazza - Futuros 2026</title>
     <style>
-        :root { --bg: #f0f2f5; --primary: #2c3e50; --accent: #e67e22; --free: #27ae60; --danger: #e74c3c; --trailer: #3498db; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 10px; }
-        .controls { text-align: center; padding: 30px; background: white; margin-bottom: 20px; border-radius: 0 0 20px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .btn-auth { background: var(--accent); color: white; border: none; padding: 15px 30px; border-radius: 50px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
-        .btn-auth:hover { transform: scale(1.05); background: #d35400; }
-        .month-section { background: white; margin-bottom: 40px; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid #ddd; }
-        .month-header { background: var(--primary); color: white; padding: 20px; text-align: center; font-size: 1.8em; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
-        .calendar-grid { display: grid; grid-template-columns: 90px repeat(4, 1fr); background: #eee; gap: 1px; }
-        .header-col { font-weight: bold; text-align: center; padding: 15px; background: #f8f9fa; color: #333; font-size: 0.9em; text-transform: uppercase; }
-        .date-label { display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; font-weight: bold; border-right: 2px solid #eee; }
-        .date-label span { font-size: 1.4em; }
-        .date-label small { color: #888; text-transform: uppercase; font-size: 0.7em; }
-        .day-red { background-color: #ffebee !important; color: var(--danger); }
-        .slot { min-height: 90px; padding: 8px; display: flex; flex-direction: column; gap: 6px; background: #fff; position: relative; transition: 0.2s; border-bottom: 1px solid #f0f0f0; }
-        .slot:hover { background: #fcfcfc; }
-        .event-card { background: var(--trailer); color: white; padding: 10px; border-radius: 6px; font-size: 12px; cursor: move; position: relative; box-shadow: 0 3px 6px rgba(0,0,0,0.15); font-weight: 500; line-height: 1.2; }
-        .delete-btn { position: absolute; top: 2px; right: 6px; cursor: pointer; font-size: 16px; opacity: 0.7; }
-        .delete-btn:hover { opacity: 1; }
-        .status-free { color: var(--free); font-size: 11px; text-align: center; font-weight: bold; margin: auto; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px; }
-        @media (max-width: 768px) { .calendar-grid { grid-template-columns: 60px repeat(4, 1fr); } .header-col { font-size: 0.6em; padding: 8px 2px; } .date-label span { font-size: 1em; } }
+        :root { --bg: #f0f2f5; --primary: #2c3e50; --trailer: #3498db; --carrinho: #e67e22; --tenda: #9b59b6; --kombi: #16a085; --free: #27ae60; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; }
+        .header { position: sticky; top: 0; background: var(--primary); color: white; padding: 10px; z-index: 1000; display: flex; justify-content: space-between; align-items: center; }
+        .btn-sync { background: #fff; color: var(--primary); border: none; padding: 8px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+        .container { padding: 10px; display: flex; flex-direction: column; gap: 15px; }
+        .month-box { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .month-name { background: #eee; padding: 8px; text-align: center; font-weight: bold; text-transform: uppercase; color: #555; font-size: 0.85em; }
+        .grid { display: grid; grid-template-columns: 60px repeat(4, 1fr); background: #ddd; gap: 1px; }
+        .h-col { background: #f9f9f9; padding: 5px; text-align: center; font-size: 0.65em; font-weight: bold; color: #888; }
+        .day-cell { background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.85em; border-right: 1px solid #eee; }
+        .weekend { background: #fffcf0; }
+        .slot { min-height: 40px; background: white; padding: 3px; display: flex; align-items: center; justify-content: center; position: relative; }
+        .card { width: 100%; height: 100%; border-radius: 4px; color: white; font-size: 10px; padding: 3px; cursor: move; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 500; }
+        .card-trailer { background: var(--trailer); }
+        .card-carrinho { background: var(--carrinho); }
+        .card-tenda { background: var(--tenda); }
+        .card-kombi { background: var(--kombi); }
+        .free-text { color: var(--free); font-size: 8px; font-weight: bold; opacity: 0.4; }
     </style>
 </head>
 <body>
 
-    <div class="controls">
-        <h1 style="margin:0; color: var(--primary); margin-bottom: 10px;">Vernazza • Dashboard 2026</h1>
-        <p id="status-text" style="color: #666; margin-bottom: 20px;">Aguardando conexão...</p>
-        <button id="auth_button" class="btn-auth">Sincronizar Agenda</button>
+    <div class="header">
+        <span style="font-weight: bold; font-size: 0.9em;">VERNAZZA • HOJE EM DIANTE</span>
+        <button id="auth_button" class="btn-sync">SINCRONIZAR</button>
     </div>
 
-    <div id="main-container"></div>
+    <div class="container" id="calendar-root"></div>
 
     <script>
-        // --- CONFIGURAÇÃO (COLOQUE SUAS CHAVES AQUI) ---
     const CLIENT_ID = '194497053838-vrdmv2d54jafsdlik4g8a14k36obkmlk.apps.googleusercontent.com'; 
     const API_KEY = 'AIzaSyB-FXQurs_X3FjSqJv6iNNFHwtaYCivLCw';
-      
-        // ----------------------------------------------
 
         const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
         const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
-        
         let tokenClient;
-        let gapiInited = false;
-        let gisInited = false;
-        const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
-        async function gapiLoaded() {
-            await gapi.load('client', async () => {
-                await gapi.client.init({ apiKey: API_KEY, discoveryDocs: [DISCOVERY_DOC] });
-                gapiInited = true;
-                updateStatus();
+        function gapiInit() { gapi.load('client', () => gapi.client.init({apiKey: API_KEY, discoveryDocs: [DISCOVERY_DOC]})); }
+        function gisInit() { tokenClient = google.accounts.oauth2.initTokenClient({client_id: CLIENT_ID, scope: SCOPES, callback: async (r) => { if(!r.error) await load(); }}); }
+        document.getElementById('auth_button').onclick = () => tokenClient.requestAccessToken({prompt: 'consent'});
+
+        async function load() {
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0); // Começa do início do dia de hoje
+
+            const res = await gapi.client.calendar.events.list({
+                'calendarId': 'primary', 
+                'timeMin': hoje.toISOString(), 
+                'timeMax': '2026-12-31T23:59:59Z', 
+                'singleEvents': true, 
+                'orderBy': 'startTime'
             });
+            render(res.result.items || []);
         }
 
-        function gisLoaded() {
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID, scope: SCOPES,
-                callback: async (resp) => { if (resp.error) throw resp; await loadEvents(); }
-            });
-            gisInited = true;
-            updateStatus();
-        }
+        function render(events) {
+            const root = document.getElementById('calendar-root');
+            root.innerHTML = '';
+            const map = {};
+            events.forEach(e => { const d = e.start.date || e.start.dateTime.split('T')[0]; if(!map[d]) map[d] = []; map[d].push(e.summary); });
 
-        function updateStatus() {
-            if (gapiInited && gisInited) document.getElementById('status-text').innerText = "Pronto para sincronizar!";
-        }
+            const hoje = new Date();
+            hoje.setHours(0,0,0,0);
+            const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
-        document.getElementById('auth_button').onclick = () => {
-            if (tokenClient) tokenClient.requestAccessToken({prompt: 'consent'});
-        };
-
-        async function loadEvents() {
-            document.getElementById('status-text').innerText = "Buscando eventos...";
-            try {
-                const response = await gapi.client.calendar.events.list({
-                    'calendarId': 'primary',
-                    'timeMin': (new Date(2026, 0, 1)).toISOString(),
-                    'timeMax': (new Date(2026, 11, 31)).toISOString(),
-                    'singleEvents': true,
-                    'orderBy': 'startTime',
-                });
-                renderYear(response.result.items || []);
-                document.getElementById('status-text').innerText = "Agenda atualizada!";
-            } catch (err) {
-                console.error(err);
-                alert("Erro ao carregar. Verifique se o seu e-mail está como 'Usuário de Teste' no Google Cloud.");
-            }
-        }
-
-        function renderYear(events) {
-            const main = document.getElementById('main-container');
-            main.innerHTML = ''; 
-            const eventMap = {};
-            
-            events.forEach(e => {
-                const date = e.start.date || e.start.dateTime.split('T')[0];
-                if (!eventMap[date]) eventMap[date] = [];
-                eventMap[date].push(e.summary);
-            });
-
-            const year = 2026;
-            for (let m = 0; m < 12; m++) {
-                const daysInMonth = new Date(year, m + 1, 0).getDate();
-                let monthHasContent = false;
-                const monthDiv = document.createElement('div');
-                monthDiv.className = 'month-section';
-                monthDiv.innerHTML = `<div class="month-header">${mesesNomes[m]}</div>`;
-                
+            for (let m = hoje.getMonth(); m < 12; m++) {
+                const monthBox = document.createElement('div');
+                monthBox.className = 'month-box';
+                monthBox.innerHTML = `<div class="month-name">${mesesNomes[m]}</div>`;
                 const grid = document.createElement('div');
-                grid.className = 'calendar-grid';
-                grid.innerHTML = `<div class="header-col">Data</div><div class="header-col">Trailer</div><div class="header-col">Carrinho</div><div class="header-col">Tenda</div><div class="header-col">Kombi</div>`;
+                grid.className = 'grid';
+                grid.innerHTML = `<div class="h-col">DATA</div><div class="h-col">TRAILER</div><div class="h-col">CARRINHO</div><div class="h-col">TENDA</div><div class="h-col">KOMBI</div>`;
 
-                for (let d = 1; d <= daysInMonth; d++) {
-                    const dateObj = new Date(year, m, d);
-                    const dateStr = dateObj.toISOString().split('T')[0];
-                    const dayEvents = eventMap[dateStr] || [];
-                    const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
+                const ultimoDia = new Date(2026, m + 1, 0).getDate();
+                let hasVisibleDays = false;
 
-                    if (dayEvents.length > 0 || isWeekend) {
-                        monthHasContent = true;
-                        addDayRow(grid, dateObj, dayEvents);
+                for (let d = 1; d <= ultimoDia; d++) {
+                    const dataAtual = new Date(2026, m, d);
+                    if (dataAtual < hoje) continue; // Pula dias que já passaram
+
+                    const iso = dataAtual.toISOString().split('T')[0];
+                    const evs = map[iso] || [];
+                    const isWknd = dataAtual.getDay() === 0 || dataAtual.getDay() === 6;
+
+                    if (evs.length > 0 || isWknd) {
+                        hasVisibleDays = true;
+                        addRow(grid, dataAtual, evs);
                     }
                 }
-
-                if (monthHasContent) {
-                    monthDiv.appendChild(grid);
-                    main.appendChild(monthDiv);
-                }
+                if (hasVisibleDays) { monthBox.appendChild(grid); root.appendChild(monthBox); }
             }
         }
 
-        function addDayRow(grid, dateObj, events) {
-            const dateLabel = document.createElement('div');
-            dateLabel.className = `date-label ${events.length >= 4 ? 'day-red' : ''}`;
-            dateLabel.innerHTML = `<span>${dateObj.getDate()}</span><small>${['Dom','Seg','Ter','Qua','Qui','Sex','Sab'][dateObj.getDay()]}</small>`;
-            grid.appendChild(dateLabel);
+        function addRow(grid, date, evs) {
+            const cell = document.createElement('div');
+            cell.className = `day-cell ${date.getDay() === 0 || date.getDay() === 6 ? 'weekend' : ''}`;
+            cell.innerHTML = `<span>${date.getDate()}</span><small>${['Dom','Seg','Ter','Qua','Qui','Sex','Sab'][date.getDay()]}</small>`;
+            grid.appendChild(cell);
 
+            const opNames = ['trailer', 'carrinho', 'tenda', 'kombi'];
             let slots = ["FREE", "FREE", "FREE", "FREE"];
-            if (events.length === 1) slots[0] = events[0]; // Regra: 1º vai para o trailer
-            else events.forEach((ev, i) => { if(i < 4) slots[i] = ev; });
+            if (evs.length === 1) slots[0] = evs[0];
+            else evs.forEach((v, i) => { if(i < 4) slots[i] = v; });
 
-            slots.forEach(text => {
-                const slot = document.createElement('div');
-                slot.className = 'slot';
-                slot.ondragover = (e) => e.preventDefault();
-                slot.ondrop = drop;
-                if (text === "FREE") {
-                    slot.innerHTML = `<div class="status-free">FREE</div>`;
-                } else {
-                    const card = document.createElement('div');
-                    card.className = 'event-card';
-                    card.draggable = true;
-                    card.id = 'id-' + Math.random().toString(36).substr(2, 5);
-                    card.innerHTML = `${text}<span class="delete-btn" onclick="this.parentElement.remove()">×</span>`;
-                    card.ondragstart = (e) => e.dataTransfer.setData("text", e.target.id);
-                    slot.appendChild(card);
+            slots.forEach((txt, i) => {
+                const s = document.createElement('div');
+                s.className = 'slot';
+                if (txt === "FREE") s.innerHTML = `<div class="free-text">FREE</div>`;
+                else {
+                    const c = document.createElement('div');
+                    c.className = `card card-${opNames[i]}`;
+                    c.innerText = txt;
+                    s.appendChild(c);
                 }
-                grid.appendChild(slot);
+                grid.appendChild(s);
             });
         }
-
-        function drop(ev) {
-            ev.preventDefault();
-            const id = ev.dataTransfer.getData("text");
-            const dragged = document.getElementById(id);
-            const target = ev.target.closest('.slot');
-            if (target && dragged) {
-                const free = target.querySelector('.status-free');
-                if (free) free.remove();
-                target.appendChild(dragged);
-            }
-        }
     </script>
-    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiInit()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisInit()"></script>
 </body>
 </html>
 

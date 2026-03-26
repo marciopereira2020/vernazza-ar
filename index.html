@@ -1,139 +1,222 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
-<meta charset="UTF-8" />
-<script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
-<style>
-
-        /* Força a ocupação total da tela no iPhone */
-
-        html, body {
-
-            margin: 0;
-
-            padding: 0;
-
-            width: 100%;
-
-            height: 100%;
-
-            overflow: hidden;
-
-            position: fixed; /* Evita o scroll "elástico" do iOS */
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Operações Food Truck</title>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+    <style>
+        :root {
+            --bg: #f4f7f6;
+            --header: #2c3e50;
+            --free-bg: #d4edda;
+            --free-text: #155724;
+            --event-bg: #007bff;
+            --full-day: #f8d7da;
         }
 
-        #start-screen {
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        h1 { text-align: center; color: var(--header); }
 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        .controls { text-align: center; margin-bottom: 20px; }
+        button { padding: 10px 20px; cursor: pointer; border-radius: 5px; border: none; background: var(--header); color: white; }
 
-            background: white; z-index: 9999;
-
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: 100px repeat(4, 1fr);
+            gap: 10px;
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
-        #btn { 
+        .header-col { font-weight: bold; text-align: center; padding: 10px; background: #eee; border-radius: 5px; }
+        
+        .day-row { display: contents; }
+        .date-label { 
+            display: flex; align-items: center; justify-content: center; 
+            background: #fff; border: 1px solid #ddd; border-radius: 5px; font-size: 0.9em;
+        }
+        .full-capacity { background-color: var(--full-day) !important; color: #721c24; }
 
-            padding: 20px 40px; background: #E1306C; color: white; 
-
-            border: none; border-radius: 30px; font-size: 18px; font-weight: bold;
-
+        .slot {
+            min-height: 60px;
+            background: #fff;
+            border: 1px dashed #ccc;
+            border-radius: 5px;
+            padding: 5px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
 
-        /* Ajuste para que a câmera preencha tudo */
-
-        .a-canvas {
-
-            width: 100% !important;
-
-            height: 100% !important;
-
-            top: 0 !important;
-
-            left: 0 !important;
-
-            position: absolute !important;
-
+        .event-card {
+            background: var(--event-bg);
+            color: white;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: move;
+            position: relative;
         }
-</style>
+
+        .event-card .delete-btn {
+            position: absolute; top: 2px; right: 5px; cursor: pointer; font-weight: bold;
+        }
+
+        .status-free {
+            background: var(--free-bg);
+            color: var(--free-text);
+            text-align: center;
+            line-height: 50px;
+            font-weight: bold;
+            border: none;
+        }
+
+        @media (max-width: 768px) {
+            .calendar-grid { grid-template-columns: 70px repeat(4, 1fr); font-size: 10px; }
+            .header-col { padding: 5px; }
+        }
+    </style>
 </head>
 <body>
-<div id="start-screen">
-<h2 style="font-family: sans-serif;">Vernazza AR</h2>
-<button id="btn">ABRIR CÂMERA FULLSCREEN</button>
-</div>
-<a-scene 
 
-        mindar-image="imageTargetSrc: ./assets/targets.mind; autoStart: false; filterMinCF:0.0001; filterBeta: 0.001; missTolerance: 50;" 
+    <h1>Cronograma Anual de Operações</h1>
+    
+    <div class="controls">
+        <button id="auth_button">Conectar Google Agenda</button>
+        <button id="signout_button" style="display:none;">Sair</button>
+    </div>
 
-        embedded 
+    <div class="calendar-grid" id="calendar">
+        <div class="header-col">Data</div>
+        <div class="header-col">Trailer</div>
+        <div class="header-col">Carrinho</div>
+        <div class="header-col">Tenda</div>
+        <div class="header-col">Kombi</div>
+    </div>
 
-        color-space="sRGB" 
+    <script>
+        // Configurações da API (Substitua pelos seus dados)
+        const CLIENT_ID = 'SEU_CLIENT_ID.apps.googleusercontent.com';
+        const API_KEY = 'SUA_API_KEY';
+        const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
+        const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
 
-        renderer="colorManagement: true, physicallyCorrectLights" 
+        let tokenClient;
+        let gapiInited = false;
+        let gsisInited = false;
 
-        vr-mode-ui="enabled: false" 
+        // Inicialização da API
+        function gapiLoaded() { gapi.load('client', intializeGapiClient); }
+        async function intializeGapiClient() {
+            await gapi.client.init({ apiKey: API_KEY, discoveryDocs: [DISCOVERY_DOC] });
+            gapiInited = true;
+        }
+        function gisLoaded() {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID, scope: SCOPES, callback: (resp) => { loadEvents(); }
+            });
+            gsisInited = true;
+        }
 
-        device-orientation-permission-ui="enabled: false">
-<a-assets>
-<video id="vid" src="./assets/video-animacao.mp4" playsinline webkit-playsinline loop="true" crossorigin="anonymous"></video>
-</a-assets>
-<a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-<a-entity mindar-image-target="targetIndex: 0" id="target">
-<a-video src="#vid" width="1.5" height="1.5" position="0 0 0"></a-video>
-</a-entity>
-</a-scene>
-<script>
+        document.getElementById('auth_button').onclick = () => tokenClient.requestAccessToken();
 
-        const sceneEl = document.querySelector('a-scene');
+        async function loadEvents() {
+            const response = await gapi.client.calendar.events.list({
+                'calendarId': 'primary',
+                'timeMin': (new Date(new Date().getFullYear(), 0, 1)).toISOString(),
+                'showDeleted': false,
+                'singleEvents': true,
+                'orderBy': 'startTime',
+            });
 
-        document.querySelector('#btn').addEventListener('click', () => {
+            const events = response.result.items;
+            renderCalendar(events);
+        }
 
-            // 1. Tenta liberar o vídeo
+        function renderCalendar(events) {
+            const container = document.getElementById('calendar');
+            // Agrupar eventos por data
+            const eventMap = {};
+            events.forEach(e => {
+                const date = e.start.date || e.start.dateTime.split('T')[0];
+                if (!eventMap[date]) eventMap[date] = [];
+                eventMap[date].push(e.summary);
+            });
 
-            const video = document.querySelector('#vid');
+            const year = new Date().getFullYear();
+            // Loop simplificado para os primeiros 30 dias (exemplo)
+            for (let d = new Date(year, 0, 1); d <= new Date(year, 0, 31); d.setDate(d.getDate() + 1)) {
+                const dateStr = d.toISOString().split('T')[0];
+                const dayEvents = eventMap[dateStr] || [];
+                const isWeekend = d.getDay() === 0 || d.getDay() === 6;
 
-            video.play().then(() => video.pause());
+                if (dayEvents.length === 0 && !isWeekend) continue;
 
-            // 2. Inicia o sistema de AR
+                createRow(container, dateStr, dayEvents);
+            }
+        }
 
-            const system = sceneEl.systems['mindar-image-system'];
+        function createRow(container, date, events) {
+            const row = document.createElement('div');
+            row.className = 'day-row';
+            
+            // Coluna Data
+            const dateDiv = document.createElement('div');
+            dateDiv.className = 'date-label' + (events.length >= 4 ? ' full-capacity' : '');
+            dateDiv.innerText = date.split('-').reverse().slice(0,2).join('/');
+            row.appendChild(dateDiv);
 
-            if (system) {
-
-                system.start(); 
-
-                document.querySelector('#start-screen').style.display = 'none';
-
+            // Lógica de Distribuição
+            let assignments = ["FREE", "FREE", "FREE", "FREE"]; // Trailer, Carrinho, Tenda, Kombi
+            
+            if (events.length === 1) {
+                assignments[0] = events[0]; // Vai para o Trailer
+            } else if (events.length > 1 && events.length <= 4) {
+                events.forEach((ev, i) => assignments[i] = ev);
+            } else if (events.length > 4) {
+                assignments[0] = events.join(", "); // Tudo no trailer em vermelho
             }
 
-            // 3. Forçar redimensionamento após abrir a câmera
+            assignments.forEach((text, index) => {
+                const slot = document.createElement('div');
+                slot.className = 'slot';
+                slot.ondrop = drop;
+                slot.ondragover = allowDrop;
+                slot.dataset.date = date;
 
-            window.dispatchEvent(new Event('resize'));
+                if (text === "FREE") {
+                    slot.innerHTML = `<div class="status-free">FREE</div>`;
+                } else {
+                    const card = document.createElement('div');
+                    card.className = 'event-card';
+                    card.draggable = true;
+                    card.id = 'ev-' + Math.random().toString(36).substr(2, 9);
+                    card.innerHTML = `${text} <span class="delete-btn" onclick="this.parentElement.remove()">×</span>`;
+                    card.ondragstart = drag;
+                    slot.appendChild(card);
+                }
+                row.appendChild(slot);
+            });
 
-        });
+            container.appendChild(row);
+        }
 
-        const target = document.querySelector('#target');
-
-        const video = document.querySelector('#vid');
-
-        target.addEventListener("targetFound", () => {
-
-            console.log("Detectado!");
-
-            video.play();
-
-        });
-
-        target.addEventListener("targetLost", () => {
-
-            video.pause();
-
-        });
-</script>
+        // Funções de Arrastar e Soltar
+        function allowDrop(ev) { ev.preventDefault(); }
+        function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
+        function drop(ev) {
+            ev.preventDefault();
+            const data = ev.dataTransfer.getData("text");
+            const draggedElement = document.getElementById(data);
+            if (ev.target.className === 'slot') {
+                ev.target.innerHTML = ''; // Remove o "FREE" se houver
+                ev.target.appendChild(draggedElement);
+            }
+        }
+    </script>
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 </body>
 </html>
- 

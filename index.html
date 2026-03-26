@@ -75,6 +75,37 @@ window.addEventListener('load', function() {
     
    
     // ... (mantenha suas funções loadEvents e renderYear aqui abaixo) ...
+
+    async function loadEvents() {
+    console.log("Iniciando busca de eventos...");
+    try {
+        const response = await gapi.client.calendar.events.list({
+            'calendarId': 'primary',
+            'timeMin': (new Date(2026, 0, 1)).toISOString(), // 01/01/2026
+            'timeMax': (new Date(2026, 11, 31)).toISOString(), // 31/12/2026
+            'showDeleted': false,
+            'singleEvents': true,
+            'orderBy': 'startTime',
+        });
+
+        const events = response.result.items;
+        
+        console.log("Eventos recebidos:", events);
+
+        if (!events || events.length === 0) {
+            alert("Atenção: O Google não retornou nenhum evento para o ano de 2026 na sua agenda principal.");
+            // Mesmo sem eventos, vamos desenhar os finais de semana como você pediu
+            renderYear([]); 
+            return;
+        }
+
+        renderYear(events);
+
+    } catch (err) {
+        console.error("Erro detalhado da API:", err);
+        alert("Erro ao buscar eventos. Verifique o console (F12).");
+    }
+}
 </script>
 
 <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>

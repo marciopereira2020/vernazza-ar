@@ -1,55 +1,38 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vernazza - Gestão de Eventos 2026</title>
-    <style>
-        :root { --bg: #eceff1; --primary: #2c3e50; --accent: #e67e22; --free: #27ae60; --danger: #e74c3c; --trailer: #3498db; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 10px; }
-        .controls { text-align: center; padding: 20px; }
-        .btn-auth { background: var(--accent); color: white; border: none; padding: 12px 25px; border-radius: 25px; cursor: pointer; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-        .month-section { background: white; margin-bottom: 30px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .month-header { background: var(--primary); color: white; padding: 15px; text-align: center; font-size: 1.5em; font-weight: bold; text-transform: uppercase; }
-        .calendar-grid { display: grid; grid-template-columns: 80px repeat(4, 1fr); border-top: 1px solid #ddd; }
-        .header-col { font-weight: bold; text-align: center; padding: 10px; background: #f8f9fa; border-bottom: 2px solid #ddd; font-size: 0.8em; }
-        .date-label { display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fdfdfd; border-right: 1px solid #eee; border-bottom: 1px solid #eee; font-weight: bold; color: #555; }
-        .day-red { background-color: #ffebee !important; color: var(--danger); }
-        .slot { min-height: 70px; border-right: 1px solid #eee; border-bottom: 1px solid #eee; padding: 5px; display: flex; flex-direction: column; gap: 4px; background: #fff; position: relative; }
-        .event-card { background: var(--trailer); color: white; padding: 6px; border-radius: 4px; font-size: 11px; cursor: move; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 10; }
-        .delete-btn { position: absolute; top: 0; right: 4px; cursor: pointer; color: white; font-size: 14px; }
-        .status-free { color: var(--free); font-size: 10px; text-align: center; font-weight: bold; margin-top: 20px; opacity: 0.6; pointer-events: none; }
-        @media (max-width: 600px) { .calendar-grid { grid-template-columns: 50px repeat(4, 1fr); } .header-col { font-size: 0.6em; padding: 5px; } .date-label { font-size: 0.7em; } }
-    </style>
-</head>
-<body>
+<script>
+    // --- CONFIGURAÇÃO ---
+    const CLIENT_ID = '194497053838-lghct08qmbqog0pmo1041bpts4tl9aaj.apps.googleusercontent.com'; 
+    const API_KEY = 'AIzaSyB-FXQurs_X3FjSqJv6iNNFHwtaYCivLCw';
+    // -------------------
 
-    <div class="controls">
-        <h2 style="color: var(--primary)">Vernazza • Operações 2026</h2>
-        <button id="auth_button" class="btn-auth">Sincronizar Google Agenda</button>
-    </div>
+    const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
+    const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
+    
+    let tokenClient;
+    let gapiInited = false;
+    let gisInited = false;
 
-    <div id="main-container"></div>
-
-    <script>
-        // --- CONFIGURAÇÃO ---
-        const CLIENT_ID = '194497053838-vrdmv2d54jafsdlik4g8a14k36obkmlk.apps.googleusercontent.com';
-        const API_KEY = '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';
-
-        // -------------------
-
-        const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
-        const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
-        let tokenClient;
-        const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-
-        // Inicialização do GAPI
-        async function initializeGapi() {
-            await gapi.client.init({ apiKey: API_KEY, discoveryDocs: [DISCOVERY_DOC] });
+    // Função que verifica se tudo carregou antes de liberar o botão
+    function checkBeforeStart() {
+        if (gapiInited && gisInited) {
+            console.log("Sistema pronto para login.");
         }
+    }
 
-        // Inicialização do GIS (Login)
-        function initializeGis() {
+    async function initializeGapi() {
+        try {
+            await gapi.client.init({
+                apiKey: API_KEY,
+                discoveryDocs: [DISCOVERY_DOC],
+            });
+            gapiInited = true;
+            checkBeforeStart();
+        } catch (e) {
+            console.error("Erro ao iniciar GAPI:", e);
+        }
+    }
+
+    function initializeGis() {
+        try {
             tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: CLIENT_ID,
                 scope: SCOPES,
@@ -58,110 +41,32 @@
                     await loadEvents();
                 },
             });
+            gisInited = true;
+            checkBeforeStart();
+        } catch (e) {
+            console.error("Erro ao iniciar GIS:", e);
         }
+    }
 
-        // Chamado pelos scripts externos no final do body
-        function start() {
-            gapi.load('client', initializeGapi);
-            initializeGis();
+    // Carregamento Seguro
+    function gapiLoaded() {
+        gapi.load('client', initializeGapi);
+    }
+
+    function gisLoaded() {
+        initializeGis();
+    }
+
+    document.getElementById('auth_button').onclick = () => {
+        if (tokenClient) {
+            tokenClient.requestAccessToken({prompt: 'consent'});
+        } else {
+            alert("O sistema ainda está carregando. Aguarde 2 segundos.");
         }
+    };
 
-        document.getElementById('auth_button').onclick = () => tokenClient.requestAccessToken();
+    // ... (mantenha suas funções loadEvents e renderYear aqui abaixo) ...
+</script>
 
-        async function loadEvents() {
-            try {
-                const response = await gapi.client.calendar.events.list({
-                    'calendarId': 'primary',
-                    'timeMin': (new Date(2026, 0, 1)).toISOString(),
-                    'timeMax': (new Date(2026, 11, 31)).toISOString(),
-                    'singleEvents': true,
-                    'orderBy': 'startTime',
-                });
-                renderYear(response.result.items);
-            } catch (err) { console.error("Erro:", err); }
-        }
-
-        function renderYear(events) {
-            const main = document.getElementById('main-container');
-            main.innerHTML = '';
-            const eventMap = {};
-            events.forEach(e => {
-                const date = e.start.date || e.start.dateTime.split('T')[0];
-                if (!eventMap[date]) eventMap[date] = [];
-                eventMap[date].push(e.summary);
-            });
-
-            for (let m = 0; m < 12; m++) {
-                const monthSection = document.createElement('div');
-                monthSection.className = 'month-section';
-                monthSection.innerHTML = `<div class="month-header">${mesesNomes[m]}</div>`;
-                const grid = document.createElement('div');
-                grid.className = 'calendar-grid';
-                grid.innerHTML = `<div class="header-col">Dia</div><div class="header-col">Trailer</div><div class="header-col">Carrinho</div><div class="header-col">Tenda</div><div class="header-col">Kombi</div>`;
-
-                let hasEvents = false;
-                const year = 2026;
-                const days = new Date(year, m + 1, 0).getDate();
-
-                for (let d = 1; d <= days; d++) {
-                    const dateObj = new Date(year, m, d);
-                    const dateStr = dateObj.toISOString().split('T')[0];
-                    const dayEvents = eventMap[dateStr] || [];
-                    const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
-
-                    if (dayEvents.length > 0 || isWeekend) {
-                        hasEvents = true;
-                        addDayRow(grid, dateObj, dayEvents);
-                    }
-                }
-                if (hasEvents) { monthSection.appendChild(grid); main.appendChild(monthSection); }
-            }
-        }
-
-        function addDayRow(grid, dateObj, events) {
-            const dateDiv = document.createElement('div');
-            dateDiv.className = `date-label ${events.length >= 4 ? 'day-red' : ''}`;
-            dateDiv.innerHTML = `<span>${dateObj.getDate()}</span><small>${['Dom','Seg','Ter','Qua','Qui','Sex','Sab'][dateObj.getDay()]}</small>`;
-            grid.appendChild(dateDiv);
-
-            let slots = ["FREE", "FREE", "FREE", "FREE"];
-            if (events.length === 1) slots[0] = events[0];
-            else events.forEach((ev, i) => { if(i < 4) slots[i] = ev; });
-
-            slots.forEach(text => {
-                const slot = document.createElement('div');
-                slot.className = 'slot';
-                slot.ondragover = (e) => e.preventDefault();
-                slot.ondrop = drop;
-                if (text === "FREE") {
-                    slot.innerHTML = `<div class="status-free">FREE</div>`;
-                } else {
-                    const card = document.createElement('div');
-                    card.className = 'event-card';
-                    card.draggable = true;
-                    card.id = 'ev-' + Math.random().toString(36).substr(2, 5);
-                    card.innerHTML = `${text} <span class="delete-btn" onclick="this.parentElement.remove()">×</span>`;
-                    card.ondragstart = (e) => e.dataTransfer.setData("text", e.target.id);
-                    slot.appendChild(card);
-                }
-                grid.appendChild(slot);
-            });
-        }
-
-        function drop(ev) {
-            ev.preventDefault();
-            const data = ev.dataTransfer.getData("text");
-            const dragged = document.getElementById(data);
-            const target = ev.target.closest('.slot');
-            if (target) {
-                const freeMsg = target.querySelector('.status-free');
-                if (freeMsg) freeMsg.remove();
-                target.appendChild(dragged);
-            }
-        }
-    </script>
-
-    <script async defer src="https://apis.google.com/js/api.js" onload="start()"></script>
-    <script async defer src="https://accounts.google.com/gsi/client"></script>
-</body>
-</html>
+<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+<script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>

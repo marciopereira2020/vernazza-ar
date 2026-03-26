@@ -10,8 +10,7 @@
         
         .header { position: sticky; top: 0; background: var(--primary); color: white; padding: 12px; z-index: 1000; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
         .btn-sync { background: #fff; color: var(--primary); border: none; padding: 10px 22px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-sync:hover { background: #eee; transform: scale(1.05); }
-
+        
         .container { padding: 10px; display: flex; flex-direction: column; gap: 15px; max-width: 1400px; margin: auto; }
         .month-box { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .month-name { background: #f8f9fa; padding: 10px; text-align: center; font-weight: bold; text-transform: uppercase; color: #333; border-bottom: 1px solid #ddd; }
@@ -20,69 +19,55 @@
         .h-col { background: #fdfdfd; padding: 8px; text-align: center; font-size: 0.7em; font-weight: bold; color: #777; }
         
         .day-cell { background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.9em; border-right: 1px solid #eee; }
-        .day-cell span { font-weight: bold; font-size: 1.1em; }
         .weekend { background: #fffdf5; }
 
-        .slot { min-height: 50px; background: white; padding: 4px; display: flex; align-items: center; justify-content: center; position: relative; }
-        .card { width: 100%; height: 90%; border-radius: 4px; color: white; font-size: 11px; padding: 5px; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 600; line-height: 1.1; }
+        .slot { min-height: 55px; background: white; padding: 4px; display: flex; align-items: center; justify-content: center; position: relative; transition: background 0.2s; }
+        .slot.drag-over { background: #e3f2fd; border: 1px dashed var(--trailer); }
+
+        .card { width: 95%; height: 90%; border-radius: 4px; color: white; font-size: 10px; padding: 5px; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 600; cursor: grab; transition: transform 0.1s; z-index: 10; }
+        .card:active { cursor: grabbing; transform: scale(0.95); }
         
+        /* Cores baseadas na coluna original, mas o card mantém a cor do tipo de operação */
         .card-trailer { background: var(--trailer); }
         .card-carrinho { background: var(--carrinho); }
         .card-tenda { background: var(--tenda); }
         .card-kombi { background: var(--kombi); }
         
-        .free-text { color: var(--free); font-size: 9px; font-weight: bold; opacity: 0.4; text-transform: uppercase; }
+        .free-text { color: var(--free); font-size: 8px; font-weight: bold; opacity: 0.4; text-transform: uppercase; pointer-events: none; }
 
         @media (max-width: 768px) {
             .grid { grid-template-columns: 50px repeat(4, 1fr); }
             .h-col { font-size: 0.6em; }
-            .card { font-size: 9px; }
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <span style="letter-spacing: 1px;">VERNAZZA • 2026</span>
-        <button id="auth_button" class="btn-sync">SINCRONIZAR AGENDA</button>
+        <span>VERNAZZA • GESTÃO DE FROTA</span>
+        <button id="auth_button" class="btn-sync">SINCRONIZAR</button>
     </div>
 
     <div class="container" id="calendar-root">
-        <p style="text-align: center; padding: 20px; color: #888;">Clique no botão acima para carregar a agenda...</p>
+        <p style="text-align: center; padding: 20px; color: #888;">Aguardando sincronização...</p>
     </div>
 
     <script>
-        // --- CONFIGURAÇÃO ---
         const CLIENT_ID = '194497053838-vrdmv2d54jafsdlik4g8a14k36obkmlk.apps.googleusercontent.com'; 
         const API_KEY = 'AIzaSyB-FXQurs_X3FjSqJv6iNNFHwtaYCivLCw';
-        // -------------------
 
         const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
         const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
         let tokenClient;
 
         function gapiInit() { gapi.load('client', () => gapi.client.init({apiKey: API_KEY, discoveryDocs: [DISCOVERY_DOC]})); }
-        function gisInit() { 
-            tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID, 
-                scope: SCOPES, 
-                callback: async (r) => { if(!r.error) await load(); }
-            }); 
-        }
-
+        function gisInit() { tokenClient = google.accounts.oauth2.initTokenClient({client_id: CLIENT_ID, scope: SCOPES, callback: async (r) => { if(!r.error) await load(); }}); }
         document.getElementById('auth_button').onclick = () => tokenClient.requestAccessToken({prompt: 'consent'});
 
         async function load() {
             const hoje = new Date();
-            hoje.setHours(0, 0, 0, 0);
-
-            const res = await gapi.client.calendar.events.list({
-                'calendarId': 'primary', 
-                'timeMin': hoje.toISOString(), 
-                'timeMax': '2026-12-31T23:59:59Z', 
-                'singleEvents': true, 
-                'orderBy': 'startTime'
-            });
+            hoje.setHours(0,0,0,0);
+            const res = await gapi.client.calendar.events.list({'calendarId': 'primary', 'timeMin': hoje.toISOString(), 'timeMax': '2026-12-31T23:59:59Z', 'singleEvents': true, 'orderBy': 'startTime'});
             render(res.result.items || []);
         }
 
@@ -91,19 +76,15 @@
             root.innerHTML = '';
             const map = {};
 
-            // LÓGICA PARA EVENTOS DE MÚLTIPLOS DIAS
             events.forEach(e => {
                 let start = new Date(e.start.dateTime || e.start.date);
                 let end = new Date(e.end.dateTime || e.end.date);
-                
-                let current = new Date(start);
-                // Percorre cada dia do evento
-                while (current < end) {
-                    const iso = current.toISOString().split('T')[0];
+                let curr = new Date(start);
+                while (curr < end) {
+                    const iso = curr.toISOString().split('T')[0];
                     if (!map[iso]) map[iso] = [];
                     map[iso].push(e.summary);
-                    
-                    current.setDate(current.getDate() + 1);
+                    curr.setDate(curr.getDate() + 1);
                 }
             });
 
@@ -115,7 +96,6 @@
                 const monthBox = document.createElement('div');
                 monthBox.className = 'month-box';
                 monthBox.innerHTML = `<div class="month-name">${mesesNomes[m]}</div>`;
-                
                 const grid = document.createElement('div');
                 grid.className = 'grid';
                 grid.innerHTML = `<div class="h-col">DIA</div><div class="h-col">TRAILER</div><div class="h-col">CARRINHO</div><div class="h-col">TENDA</div><div class="h-col">KOMBI</div>`;
@@ -125,13 +105,10 @@
 
                 for (let d = 1; d <= ultimoDia; d++) {
                     const dt = new Date(2026, m, d);
-                    if (dt < hoje) continue; // Pula dias passados
-
+                    if (dt < hoje) continue;
                     const iso = dt.toISOString().split('T')[0];
                     const evs = map[iso] || [];
-                    const isWknd = dt.getDay() === 0 || dt.getDay() === 6;
-
-                    if (evs.length > 0 || isWknd) {
+                    if (evs.length > 0 || dt.getDay() === 0 || dt.getDay() === 6) {
                         hasWork = true;
                         addRow(grid, dt, evs);
                     }
@@ -146,28 +123,55 @@
             cell.innerHTML = `<span>${date.getDate()}</span><small>${['Dom','Seg','Ter','Qua','Qui','Sex','Sab'][date.getDay()]}</small>`;
             grid.appendChild(cell);
 
-            const opNames = ['trailer', 'carrinho', 'tenda', 'kombi'];
+            const opClasses = ['card-trailer', 'card-carrinho', 'card-tenda', 'card-kombi'];
             let slots = ["FREE", "FREE", "FREE", "FREE"];
-            
-            // Regra: se tiver só 1 evento, vai para o trailer. Se tiver mais, distribui.
             if (evs.length === 1) slots[0] = evs[0];
             else evs.forEach((v, i) => { if(i < 4) slots[i] = v; });
 
             slots.forEach((txt, i) => {
                 const s = document.createElement('div');
                 s.className = 'slot';
-                if (txt === "FREE") s.innerHTML = `<div class="free-text">Livre</div>`;
-                else {
+                // Eventos de Drag and Drop
+                s.ondragover = (e) => { e.preventDefault(); s.classList.add('drag-over'); };
+                s.ondragleave = () => s.classList.remove('drag-over');
+                s.ondrop = (e) => handleDrop(e, s);
+
+                if (txt === "FREE") {
+                    s.innerHTML = `<div class="free-text">Livre</div>`;
+                } else {
                     const c = document.createElement('div');
-                    c.className = `card card-${opNames[i]}`;
+                    c.className = `card ${opClasses[i]}`;
                     c.innerText = txt;
+                    c.draggable = true;
+                    c.id = 'ev-' + Math.random().toString(36).substr(2, 5);
+                    c.ondragstart = (e) => { e.dataTransfer.setData("text/plain", e.target.id); };
                     s.appendChild(c);
                 }
                 grid.appendChild(s);
             });
+        }
+
+        function handleDrop(e, slot) {
+            e.preventDefault();
+            slot.classList.remove('drag-over');
+            const id = e.dataTransfer.getData("text/plain");
+            const draggedEl = document.getElementById(id);
+            
+            if (draggedEl && slot) {
+                // Remove o texto "Livre" se houver
+                const freeText = slot.querySelector('.free-text');
+                if (freeText) freeText.remove();
+
+                // Se o slot já tiver um card, não faz nada ou troca (aqui vamos apenas adicionar)
+                slot.appendChild(draggedEl);
+                
+                // Se o slot de onde o card saiu ficou vazio, poderíamos adicionar "Livre" de volta, 
+                // mas para simplicidade, ele apenas move.
+            }
         }
     </script>
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiInit()"></script>
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisInit()"></script>
 </body>
 </html>
+

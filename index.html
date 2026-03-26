@@ -3,59 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vernazza - Gestão Operacional 2026</title>
+    <title>Vernazza Ultra-Compact 2026</title>
     <style>
-        :root { --bg: #f0f2f5; --primary: #2c3e50; --trailer: #3498db; --carrinho: #e67e22; --tenda: #9b59b6; --kombi: #16a085; --free: #27ae60; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; }
+        :root { --bg: #f8f9fa; --primary: #2c3e50; --trailer: #3498db; --carrinho: #e67e22; --tenda: #9b59b6; --kombi: #16a085; --free: #e0e0e0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin: 0; padding: 5px; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
-        .header { position: sticky; top: 0; background: var(--primary); color: white; padding: 12px; z-index: 1000; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-        .btn-sync { background: #fff; color: var(--primary); border: none; padding: 10px 22px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        
-        .container { padding: 10px; display: flex; flex-direction: column; gap: 15px; max-width: 1400px; margin: auto; }
-        .month-box { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .month-name { background: #f8f9fa; padding: 10px; text-align: center; font-weight: bold; text-transform: uppercase; color: #333; border-bottom: 1px solid #ddd; }
+        /* Cabeçalho minúsculo */
+        .header { background: var(--primary); color: white; padding: 5px 15px; display: flex; justify-content: space-between; align-items: center; border-radius: 5px; margin-bottom: 5px; }
+        .btn-sync { background: #fff; color: var(--primary); border: none; padding: 3px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 11px; }
 
-        .grid { display: grid; grid-template-columns: 70px repeat(4, 1fr); background: #ddd; gap: 1px; }
-        .h-col { background: #fdfdfd; padding: 8px; text-align: center; font-size: 0.7em; font-weight: bold; color: #777; }
+        /* Área de scroll horizontal (meses lado a lado) */
+        .dashboard { flex: 1; display: flex; gap: 5px; overflow-x: auto; align-items: flex-start; padding-bottom: 10px; }
         
-        .day-cell { background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.9em; border-right: 1px solid #eee; }
-        .weekend { background: #fffdf5; }
+        .month-box { background: white; border: 1px solid #ddd; border-radius: 4px; display: flex; flex-direction: column; min-width: 180px; height: 95%; }
+        .month-name { background: #eee; text-align: center; font-weight: bold; font-size: 10px; padding: 3px; text-transform: uppercase; border-bottom: 1px solid #ddd; }
 
-        .slot { min-height: 55px; background: white; padding: 4px; display: flex; align-items: center; justify-content: center; position: relative; transition: background 0.2s; }
-        .slot.drag-over { background: #e3f2fd; border: 1px dashed var(--trailer); }
-
-        .card { width: 95%; height: 90%; border-radius: 4px; color: white; font-size: 10px; padding: 5px; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 600; cursor: grab; transition: transform 0.1s; z-index: 10; }
-        .card:active { cursor: grabbing; transform: scale(0.95); }
+        .grid { display: grid; grid-template-columns: 25px repeat(4, 1fr); background: #ddd; gap: 1px; flex: 1; overflow-y: auto; }
+        .h-col { background: #fdfdfd; padding: 2px; text-align: center; font-size: 8px; font-weight: bold; color: #999; }
         
-        /* Cores baseadas na coluna original, mas o card mantém a cor do tipo de operação */
+        .day-cell { background: white; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold; }
+        .weekend { background: #fff9e6; }
+
+        .slot { height: 18px; background: white; padding: 1px; display: flex; align-items: center; justify-content: center; position: relative; border-bottom: 0.5px solid #f0f0f0; }
+        .slot.drag-over { background: #e3f2fd; }
+
+        .card { width: 100%; height: 100%; border-radius: 2px; color: white; font-size: 7.5px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: grab; display: flex; align-items: center; justify-content: center; font-weight: bold; text-align: center; }
         .card-trailer { background: var(--trailer); }
         .card-carrinho { background: var(--carrinho); }
         .card-tenda { background: var(--tenda); }
         .card-kombi { background: var(--kombi); }
         
-        .free-text { color: var(--free); font-size: 8px; font-weight: bold; opacity: 0.4; text-transform: uppercase; pointer-events: none; }
+        .free-dot { width: 4px; height: 4px; background: var(--free); border-radius: 50%; opacity: 0.3; }
 
-        @media (max-width: 768px) {
-            .grid { grid-template-columns: 50px repeat(4, 1fr); }
-            .h-col { font-size: 0.6em; }
-        }
+        /* Esconder scrollbars para ficar mais limpo */
+        .dashboard::-webkit-scrollbar { height: 6px; }
+        .dashboard::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <span>VERNAZZA • GESTÃO DE FROTA</span>
+        <span style="font-size: 12px; font-weight: bold;">VERNAZZA OPS 2026</span>
         <button id="auth_button" class="btn-sync">SINCRONIZAR</button>
     </div>
 
-    <div class="container" id="calendar-root">
-        <p style="text-align: center; padding: 20px; color: #888;">Aguardando sincronização...</p>
-    </div>
+    <div class="dashboard" id="calendar-root">
+        </div>
 
     <script>
         const CLIENT_ID = '194497053838-vrdmv2d54jafsdlik4g8a14k36obkmlk.apps.googleusercontent.com'; 
         const API_KEY = 'AIzaSyB-FXQurs_X3FjSqJv6iNNFHwtaYCivLCw';
-
         const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
         const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
         let tokenClient;
@@ -65,9 +62,7 @@
         document.getElementById('auth_button').onclick = () => tokenClient.requestAccessToken({prompt: 'consent'});
 
         async function load() {
-            const hoje = new Date();
-            hoje.setHours(0,0,0,0);
-            const res = await gapi.client.calendar.events.list({'calendarId': 'primary', 'timeMin': hoje.toISOString(), 'timeMax': '2026-12-31T23:59:59Z', 'singleEvents': true, 'orderBy': 'startTime'});
+            const res = await gapi.client.calendar.events.list({'calendarId': 'primary', 'timeMin': '2026-01-01T00:00:00Z', 'timeMax': '2026-12-31T23:59:59Z', 'singleEvents': true, 'orderBy': 'startTime'});
             render(res.result.items || []);
         }
 
@@ -89,89 +84,74 @@
             });
 
             const hoje = new Date();
-            hoje.setHours(0,0,0,0);
-            const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            const mesesNomes = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
 
-            for (let m = hoje.getMonth(); m < 12; m++) {
+            for (let m = 0; m < 12; m++) {
                 const monthBox = document.createElement('div');
                 monthBox.className = 'month-box';
                 monthBox.innerHTML = `<div class="month-name">${mesesNomes[m]}</div>`;
                 const grid = document.createElement('div');
                 grid.className = 'grid';
-                grid.innerHTML = `<div class="h-col">DIA</div><div class="h-col">TRAILER</div><div class="h-col">CARRINHO</div><div class="h-col">TENDA</div><div class="h-col">KOMBI</div>`;
+                grid.innerHTML = `<div class="h-col">D</div><div class="h-col">T</div><div class="h-col">C</div><div class="h-col">T</div><div class="h-col">K</div>`;
 
                 const ultimoDia = new Date(2026, m + 1, 0).getDate();
-                let hasWork = false;
-
                 for (let d = 1; d <= ultimoDia; d++) {
                     const dt = new Date(2026, m, d);
-                    if (dt < hoje) continue;
                     const iso = dt.toISOString().split('T')[0];
                     const evs = map[iso] || [];
-                    if (evs.length > 0 || dt.getDay() === 0 || dt.getDay() === 6) {
-                        hasWork = true;
-                        addRow(grid, dt, evs);
-                    }
+                    const isWknd = dt.getDay() === 0 || dt.getDay() === 6;
+
+                    // Mostra o dia se tiver evento OU for fds (Sáb/Dom)
+                    if (evs.length > 0 || isWknd) addRow(grid, dt, evs);
                 }
-                if (hasWork) { monthBox.appendChild(grid); root.appendChild(monthBox); }
+                monthBox.appendChild(grid);
+                root.appendChild(monthBox);
             }
         }
 
         function addRow(grid, date, evs) {
             const cell = document.createElement('div');
             cell.className = `day-cell ${date.getDay() === 0 || date.getDay() === 6 ? 'weekend' : ''}`;
-            cell.innerHTML = `<span>${date.getDate()}</span><small>${['Dom','Seg','Ter','Qua','Qui','Sex','Sab'][date.getDay()]}</small>`;
+            cell.innerHTML = `${date.getDate()}`;
             grid.appendChild(cell);
 
-            const opClasses = ['card-trailer', 'card-carrinho', 'card-tenda', 'card-kombi'];
-            let slots = ["FREE", "FREE", "FREE", "FREE"];
+            const ops = ['trailer', 'carrinho', 'tenda', 'kombi'];
+            let slots = ["", "", "", ""];
             if (evs.length === 1) slots[0] = evs[0];
             else evs.forEach((v, i) => { if(i < 4) slots[i] = v; });
 
             slots.forEach((txt, i) => {
                 const s = document.createElement('div');
                 s.className = 'slot';
-                // Eventos de Drag and Drop
                 s.ondragover = (e) => { e.preventDefault(); s.classList.add('drag-over'); };
                 s.ondragleave = () => s.classList.remove('drag-over');
-                s.ondrop = (e) => handleDrop(e, s);
+                s.ondrop = (e) => {
+                    e.preventDefault();
+                    s.classList.remove('drag-over');
+                    const id = e.dataTransfer.getData("text");
+                    const el = document.getElementById(id);
+                    if (s.querySelector('.free-dot')) s.querySelector('.free-dot').remove();
+                    s.appendChild(el);
+                };
 
-                if (txt === "FREE") {
-                    s.innerHTML = `<div class="free-text">Livre</div>`;
+                if (txt === "") {
+                    s.innerHTML = `<div class="free-dot"></div>`;
                 } else {
                     const c = document.createElement('div');
-                    c.className = `card ${opClasses[i]}`;
+                    c.className = `card card-${ops[i]}`;
                     c.innerText = txt;
                     c.draggable = true;
-                    c.id = 'ev-' + Math.random().toString(36).substr(2, 5);
-                    c.ondragstart = (e) => { e.dataTransfer.setData("text/plain", e.target.id); };
+                    c.id = 'id-' + Math.random().toString(36).substr(2, 5);
+                    c.ondragstart = (e) => e.dataTransfer.setData("text", e.target.id);
                     s.appendChild(c);
                 }
                 grid.appendChild(s);
             });
-        }
-
-        function handleDrop(e, slot) {
-            e.preventDefault();
-            slot.classList.remove('drag-over');
-            const id = e.dataTransfer.getData("text/plain");
-            const draggedEl = document.getElementById(id);
-            
-            if (draggedEl && slot) {
-                // Remove o texto "Livre" se houver
-                const freeText = slot.querySelector('.free-text');
-                if (freeText) freeText.remove();
-
-                // Se o slot já tiver um card, não faz nada ou troca (aqui vamos apenas adicionar)
-                slot.appendChild(draggedEl);
-                
-                // Se o slot de onde o card saiu ficou vazio, poderíamos adicionar "Livre" de volta, 
-                // mas para simplicidade, ele apenas move.
-            }
         }
     </script>
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiInit()"></script>
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisInit()"></script>
 </body>
 </html>
+
 

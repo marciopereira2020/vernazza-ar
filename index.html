@@ -117,113 +117,78 @@
         const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
         const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
 
-        let tokenClient;
-        const mesesNomes = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+        // Configurações (Preencha com suas chaves)
+const CLIENT_ID = 'SEU_CLIENT_ID';
+const API_KEY = 'SUA_API_KEY';
+const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
+const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
 
-        function gapiLoaded() { gapi.load('client', async () => { await gapi.client.init({ apiKey: API_KEY, discoveryDocs: [DISCOVERY_DOC] }); }); }
-        function gisLoaded() { tokenClient = google.accounts.oauth2.initTokenClient({ client_id: CLIENT_ID, scope: SCOPES, callback: (resp) => loadEvents() }); }
-        document.getElementById('auth_button').onclick = () => tokenClient.requestAccessToken();
+let tokenClient;
+let gapiInited = false;
+let gsisInited = false;
 
-        async function loadEvents() {
-            const response = await gapi.client.calendar.events.list({
-                'calendarId': 'primary',
-                'timeMin': (new Date(2026, 0, 1)).toISOString(),
-                'singleEvents': true,
-                'orderBy': 'startTime',
-            });
-            renderYear(response.result.items);
+// 1. Inicializa o GAPI (Google API Client)
+async function gapiLoaded() {
+    await gapi.load('client', async () => {
+        await gapi.client.init({
+            apiKey: API_KEY,
+            discoveryDocs: [DISCOVERY_DOC],
+        });
+        gapiInited = true;
+        console.log("GAPI pronto.");
+    });
+}
+
+// 2. Inicializa o GIS (Google Identity Service - Login)
+function gisLoaded() {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: async (resp) => {
+            if (resp.error !== undefined) throw (resp);
+            await loadEvents(); // Só chama os eventos após o login confirmar
+        },
+    });
+    gsisInited = true;
+    console.log("GIS pronto.");
+}
+
+// 3. Função para disparar o login
+document.getElementById('auth_button').onclick = () => {
+    // Solicita o token de acesso (abre o popup do Google)
+    tokenClient.requestAccessToken({prompt: 'consent'});
+};
+
+// 4. Busca os eventos de 2026
+async function loadEvents() {
+    try {
+        // Verifica se o cliente está pronto
+        if (!gapi.client.calendar) {
+            console.error("Calendar API não carregada. Tentando novamente...");
+            return;
         }
 
-        function renderYear(events) {
-            const main = document.getElementById('main-container');
-            main.innerHTML = '';
-            const eventMap = {};
-            events.forEach(e => {
-                const date = e.start.date || e.start.dateTime.split('T')[0];
-                if (!eventMap[date]) eventMap[date] = [];
-                eventMap[date].push(e.summary);
-            });
+        const response = await gapi.client.calendar.events.list({
+            'calendarId': 'primary',
+            'timeMin': (new Date(2026, 0, 1)).toISOString(), // Início de 2026
+            'timeMax': (new Date(2026, 11, 31)).toISOString(), // Fim de 2026
+            'showDeleted': false,
+            'singleEvents': true,
+            'orderBy': 'startTime',
+        });
 
-            for (let m = 0; m < 12; m++) {
-                const monthSection = document.createElement('div');
-                monthSection.className = 'month-section';
-                monthSection.innerHTML = `<div class="month-header">${mesesNomes[m]}</div>`;
-                
-                const grid = document.createElement('div');
-                grid.className = 'calendar-grid';
-                grid.innerHTML = `<div class="header-col">Dia</div><div class="header-col">Trailer</div><div class="header-col">Carrinho</div><div class="header-col">Tenda</div><div class="header-col">Kombi</div>`;
-
-                let hasEventsInMonth = false;
-                const year = 2026;
-                const daysInMonth = new Date(year, m + 1, 0).getDate();
-
-                for (let d = 1; d <= daysInMonth; d++) {
-                    const dateObj = new Date(year, m, d);
-                    const dateStr = dateObj.toISOString().split('T')[0];
-                    const dayEvents = eventMap[dateStr] || [];
-                    const isWeekend = dateObj.getDay() === 0 || dateObj.getDay() === 6;
-
-                    if (dayEvents.length > 0 || isWeekend) {
-                        hasEventsInMonth = true;
-                        addDayRow(grid, dateObj, dayEvents);
-                    }
-                }
-
-                if (hasEventsInMonth) {
-                    monthSection.appendChild(grid);
-                    main.appendChild(monthSection);
-                }
-            }
+        const events = response.result.items;
+        if (!events || events.length === 0) {
+            alert("Nenhum evento encontrado para 2026.");
+            return;
         }
+        renderYear(events);
+    } catch (err) {
+        console.error("Erro ao buscar eventos:", err);
+    }
+}
 
-        function addDayRow(grid, dateObj, events) {
-            const dateStr = dateObj.toISOString().split('T')[0];
-            const isRed = events.length >= 4;
-            
-            // Coluna Data
-            const dateDiv = document.createElement('div');
-            dateDiv.className = `date-label ${isRed ? 'day-red' : ''}`;
-            dateDiv.innerHTML = `<span>${dateObj.getDate()}</span><small>${['Dom','Seg','Ter','Qua','Qui','Sex','Sab'][dateObj.getDay()]}</small>`;
-            grid.appendChild(dateDiv);
 
-            // Distribuição lógica
-            let slotsData = ["FREE", "FREE", "FREE", "FREE"];
-            if (events.length === 1) slotsData[0] = events[0];
-            else events.forEach((ev, i) => { if(i < 4) slotsData[i] = ev; });
-
-            slotsData.forEach((content, i) => {
-                const slot = document.createElement('div');
-                slot.className = 'slot';
-                slot.ondrop = drop;
-                slot.ondragover = allowDrop;
-                
-                if (content === "FREE") {
-                    slot.innerHTML = `<div class="status-free">FREE</div>`;
-                } else {
-                    const card = document.createElement('div');
-                    card.className = 'event-card';
-                    card.draggable = true;
-                    card.id = 'ev-' + Math.random().toString(36).substr(2, 5);
-                    card.innerHTML = `${content} <span class="delete-btn" onclick="this.parentElement.remove()">×</span>`;
-                    card.ondragstart = drag;
-                    slot.appendChild(card);
-                }
-                grid.appendChild(slot);
-            });
-        }
-
-        function allowDrop(ev) { ev.preventDefault(); }
-        function drag(ev) { ev.dataTransfer.setData("text", ev.target.id); }
-        function drop(ev) {
-            ev.preventDefault();
-            const data = ev.dataTransfer.getData("text");
-            const draggedElement = document.getElementById(data);
-            const target = ev.target.closest('.slot');
-            if (target) {
-                if (target.querySelector('.status-free')) target.innerHTML = '';
-                target.appendChild(draggedElement);
-            }
-        }
     </script>
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>

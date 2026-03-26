@@ -3,52 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vernazza - Futuros 2026</title>
+    <title>Vernazza - Gestão Operacional 2026</title>
     <style>
         :root { --bg: #f0f2f5; --primary: #2c3e50; --trailer: #3498db; --carrinho: #e67e22; --tenda: #9b59b6; --kombi: #16a085; --free: #27ae60; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; }
-        .header { position: sticky; top: 0; background: var(--primary); color: white; padding: 10px; z-index: 1000; display: flex; justify-content: space-between; align-items: center; }
-        .btn-sync { background: #fff; color: var(--primary); border: none; padding: 8px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; }
-        .container { padding: 10px; display: flex; flex-direction: column; gap: 15px; }
-        .month-box { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .month-name { background: #eee; padding: 8px; text-align: center; font-weight: bold; text-transform: uppercase; color: #555; font-size: 0.85em; }
-        .grid { display: grid; grid-template-columns: 60px repeat(4, 1fr); background: #ddd; gap: 1px; }
-        .h-col { background: #f9f9f9; padding: 5px; text-align: center; font-size: 0.65em; font-weight: bold; color: #888; }
-        .day-cell { background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.85em; border-right: 1px solid #eee; }
-        .weekend { background: #fffcf0; }
-        .slot { min-height: 40px; background: white; padding: 3px; display: flex; align-items: center; justify-content: center; position: relative; }
-        .card { width: 100%; height: 100%; border-radius: 4px; color: white; font-size: 10px; padding: 3px; cursor: move; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 500; }
+        
+        .header { position: sticky; top: 0; background: var(--primary); color: white; padding: 12px; z-index: 1000; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .btn-sync { background: #fff; color: var(--primary); border: none; padding: 10px 22px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .btn-sync:hover { background: #eee; transform: scale(1.05); }
+
+        .container { padding: 10px; display: flex; flex-direction: column; gap: 15px; max-width: 1400px; margin: auto; }
+        .month-box { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .month-name { background: #f8f9fa; padding: 10px; text-align: center; font-weight: bold; text-transform: uppercase; color: #333; border-bottom: 1px solid #ddd; }
+
+        .grid { display: grid; grid-template-columns: 70px repeat(4, 1fr); background: #ddd; gap: 1px; }
+        .h-col { background: #fdfdfd; padding: 8px; text-align: center; font-size: 0.7em; font-weight: bold; color: #777; }
+        
+        .day-cell { background: white; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.9em; border-right: 1px solid #eee; }
+        .day-cell span { font-weight: bold; font-size: 1.1em; }
+        .weekend { background: #fffdf5; }
+
+        .slot { min-height: 50px; background: white; padding: 4px; display: flex; align-items: center; justify-content: center; position: relative; }
+        .card { width: 100%; height: 90%; border-radius: 4px; color: white; font-size: 11px; padding: 5px; display: flex; align-items: center; justify-content: center; text-align: center; font-weight: 600; line-height: 1.1; }
+        
         .card-trailer { background: var(--trailer); }
         .card-carrinho { background: var(--carrinho); }
         .card-tenda { background: var(--tenda); }
         .card-kombi { background: var(--kombi); }
-        .free-text { color: var(--free); font-size: 8px; font-weight: bold; opacity: 0.4; }
+        
+        .free-text { color: var(--free); font-size: 9px; font-weight: bold; opacity: 0.4; text-transform: uppercase; }
+
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 50px repeat(4, 1fr); }
+            .h-col { font-size: 0.6em; }
+            .card { font-size: 9px; }
+        }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <span style="font-weight: bold; font-size: 0.9em;">VERNAZZA • HOJE EM DIANTE</span>
-        <button id="auth_button" class="btn-sync">SINCRONIZAR</button>
+        <span style="letter-spacing: 1px;">VERNAZZA • 2026</span>
+        <button id="auth_button" class="btn-sync">SINCRONIZAR AGENDA</button>
     </div>
 
-    <div class="container" id="calendar-root"></div>
+    <div class="container" id="calendar-root">
+        <p style="text-align: center; padding: 20px; color: #888;">Clique no botão acima para carregar a agenda...</p>
+    </div>
 
     <script>
-        const CLIENT_ID = 'SEU_CLIENT_ID'; 
-        const API_KEY = 'SUA_API_KEY';
+        // --- CONFIGURAÇÃO ---
+        const CLIENT_ID = '194497053838-vrdmv2d54jafsdlik4g8a14k36obkmlk.apps.googleusercontent.com'; 
+        const API_KEY = 'AIzaSyB-FXQurs_X3FjSqJv6iNNFHwtaYCivLCw';
+        // -------------------
 
         const DISCOVERY_DOC = "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest";
         const SCOPES = "https://www.googleapis.com/auth/calendar.readonly";
         let tokenClient;
 
         function gapiInit() { gapi.load('client', () => gapi.client.init({apiKey: API_KEY, discoveryDocs: [DISCOVERY_DOC]})); }
-        function gisInit() { tokenClient = google.accounts.oauth2.initTokenClient({client_id: CLIENT_ID, scope: SCOPES, callback: async (r) => { if(!r.error) await load(); }}); }
+        function gisInit() { 
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID, 
+                scope: SCOPES, 
+                callback: async (r) => { if(!r.error) await load(); }
+            }); 
+        }
+
         document.getElementById('auth_button').onclick = () => tokenClient.requestAccessToken({prompt: 'consent'});
 
         async function load() {
             const hoje = new Date();
-            hoje.setHours(0, 0, 0, 0); // Começa do início do dia de hoje
+            hoje.setHours(0, 0, 0, 0);
 
             const res = await gapi.client.calendar.events.list({
                 'calendarId': 'primary', 
@@ -64,7 +90,22 @@
             const root = document.getElementById('calendar-root');
             root.innerHTML = '';
             const map = {};
-            events.forEach(e => { const d = e.start.date || e.start.dateTime.split('T')[0]; if(!map[d]) map[d] = []; map[d].push(e.summary); });
+
+            // LÓGICA PARA EVENTOS DE MÚLTIPLOS DIAS
+            events.forEach(e => {
+                let start = new Date(e.start.dateTime || e.start.date);
+                let end = new Date(e.end.dateTime || e.end.date);
+                
+                let current = new Date(start);
+                // Percorre cada dia do evento
+                while (current < end) {
+                    const iso = current.toISOString().split('T')[0];
+                    if (!map[iso]) map[iso] = [];
+                    map[iso].push(e.summary);
+                    
+                    current.setDate(current.getDate() + 1);
+                }
+            });
 
             const hoje = new Date();
             hoje.setHours(0,0,0,0);
@@ -74,27 +115,28 @@
                 const monthBox = document.createElement('div');
                 monthBox.className = 'month-box';
                 monthBox.innerHTML = `<div class="month-name">${mesesNomes[m]}</div>`;
+                
                 const grid = document.createElement('div');
                 grid.className = 'grid';
-                grid.innerHTML = `<div class="h-col">DATA</div><div class="h-col">TRAILER</div><div class="h-col">CARRINHO</div><div class="h-col">TENDA</div><div class="h-col">KOMBI</div>`;
+                grid.innerHTML = `<div class="h-col">DIA</div><div class="h-col">TRAILER</div><div class="h-col">CARRINHO</div><div class="h-col">TENDA</div><div class="h-col">KOMBI</div>`;
 
                 const ultimoDia = new Date(2026, m + 1, 0).getDate();
-                let hasVisibleDays = false;
+                let hasWork = false;
 
                 for (let d = 1; d <= ultimoDia; d++) {
-                    const dataAtual = new Date(2026, m, d);
-                    if (dataAtual < hoje) continue; // Pula dias que já passaram
+                    const dt = new Date(2026, m, d);
+                    if (dt < hoje) continue; // Pula dias passados
 
-                    const iso = dataAtual.toISOString().split('T')[0];
+                    const iso = dt.toISOString().split('T')[0];
                     const evs = map[iso] || [];
-                    const isWknd = dataAtual.getDay() === 0 || dataAtual.getDay() === 6;
+                    const isWknd = dt.getDay() === 0 || dt.getDay() === 6;
 
                     if (evs.length > 0 || isWknd) {
-                        hasVisibleDays = true;
-                        addRow(grid, dataAtual, evs);
+                        hasWork = true;
+                        addRow(grid, dt, evs);
                     }
                 }
-                if (hasVisibleDays) { monthBox.appendChild(grid); root.appendChild(monthBox); }
+                if (hasWork) { monthBox.appendChild(grid); root.appendChild(monthBox); }
             }
         }
 
@@ -106,13 +148,15 @@
 
             const opNames = ['trailer', 'carrinho', 'tenda', 'kombi'];
             let slots = ["FREE", "FREE", "FREE", "FREE"];
+            
+            // Regra: se tiver só 1 evento, vai para o trailer. Se tiver mais, distribui.
             if (evs.length === 1) slots[0] = evs[0];
             else evs.forEach((v, i) => { if(i < 4) slots[i] = v; });
 
             slots.forEach((txt, i) => {
                 const s = document.createElement('div');
                 s.className = 'slot';
-                if (txt === "FREE") s.innerHTML = `<div class="free-text">FREE</div>`;
+                if (txt === "FREE") s.innerHTML = `<div class="free-text">Livre</div>`;
                 else {
                     const c = document.createElement('div');
                     c.className = `card card-${opNames[i]}`;
@@ -127,4 +171,3 @@
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisInit()"></script>
 </body>
 </html>
-

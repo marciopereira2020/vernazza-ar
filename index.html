@@ -57,14 +57,23 @@
         initializeGis();
     }
 
-    document.getElementById('auth_button').onclick = () => {
-        if (tokenClient) {
-            tokenClient.requestAccessToken({prompt: 'consent'});
-        } else {
-            alert("O sistema ainda está carregando. Aguarde 2 segundos.");
-        }
-    };
-
+    // Espera o documento carregar para evitar o erro de 'null'
+window.addEventListener('load', function() {
+    const loginBtn = document.getElementById('auth_button');
+    
+    if (loginBtn) {
+        loginBtn.onclick = () => {
+            if (tokenClient) {
+                tokenClient.requestAccessToken({prompt: 'consent'});
+            } else {
+                alert("O sistema de login ainda está carregando. Aguarde um instante.");
+            }
+        };
+    }
+});
+    
+    
+   
     // ... (mantenha suas funções loadEvents e renderYear aqui abaixo) ...
 </script>
 
